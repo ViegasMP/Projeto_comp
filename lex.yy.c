@@ -779,8 +779,8 @@ char *yytext;
 #include<stdio.h>
 int line_count=1;
 int col_count=0;
-int ini_line=1;
-int ini_col=1;
+int ini_line=1; //guarda linha em que começa comentario ou string
+int ini_col=1; //guarda coluna em que começa comentario ou string
 #line 785 "lex.yy.c"
 
 #define INITIAL 0
@@ -1072,7 +1072,7 @@ YY_RULE_SETUP
 case 4:
 YY_RULE_SETUP
 #line 25 "jucompiler.l"
-{BEGIN COMMENT;ini_line=line_count;ini_col = col_count+1;col_count=col_count+yyleng;}
+{BEGIN COMMENT;ini_line=line_count;col_count=col_count+yyleng;ini_col = col_count-yyleng;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
