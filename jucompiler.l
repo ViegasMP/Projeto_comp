@@ -38,7 +38,7 @@ int ini_col=1; //guarda coluna em que começa comentario ou string
 <ERRO>({alfabeto}*|{numero}*|" "*)+\"					{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}					
 
 						
-\.									{col_count++;printf("Line %d, col %d: illegal character (.)\n",line_count,col_count);}
+\.|\?|\$|\#									{col_count++;printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
 "++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"	{printf("RESERVED(%s)\n",yytext);col_count=col_count+yyleng;}
 (({numero}+(""{numero}+)*)*"."(({numero}+(""+{numero}+)+)|{numero}+|{exponencial}{mais_ou_menos}?{numero}+(""+{numero}+)*)*)|({numero}+(""+{numero}+)*{exponencial}{mais_ou_menos}?{numero}+("_"+{numero}+)*)                      {printf("REALLIT(%s)\n",yytext);}
 {numero}+(({numero}|"_")*{numero}+)*					{printf("INTLIT(%s)\n",yytext);col_count=col_count+yyleng;}
