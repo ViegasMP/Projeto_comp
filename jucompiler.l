@@ -19,27 +19,28 @@ int ini_col=1; //guarda coluna em que começa comentario ou string
 %%
 
 "//"													{BEGIN COMMENT2;col_count=col_count+yyleng;}
-<COMMENT2>\n|\r|(\r\n)  								{BEGIN 0;line_count++;} //regressar ao normal
+<COMMENT2>\n|\r|(\r\n)  								{BEGIN 0;line_count++;col_count=0;} //regressar ao normal
 <COMMENT2>.	  											{col_count=col_count+yyleng;} //ignorar
 
-"/*" 													{BEGIN COMMENT;ini_line=line_count;ini_col = col_count+1;col_count=col_count+yyleng;}
+"/*" 													{ini_line=line_count;ini_col = col_count+1;BEGIN COMMENT;col_count=col_count+yyleng;}
 <COMMENT>"*/" 											{BEGIN 0;col_count=col_count+yyleng;} //regressar ao normal
 <COMMENT><<EOF>>										{printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);BEGIN 0;} //regressar ao normal
 <COMMENT>\n|\r|(\r\n)  									{line_count++;} //ignorar
 <COMMENT>.	  											{col_count=col_count+yyleng;} //ignorar
 
+
 \"														{BEGIN STR;ini_line=line_count;ini_col = col_count+1;col_count=col_count+yyleng;}
 <STR><<EOF>>											{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}
-<STR>[^\"]\n									{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}
 <STR>({alfabeto}*|{numero}*|" "*|(\\t)*|(\\f)*|(\\n)*|(\\r)*|(\\\*)*|(\t)*|(\\\\)*|(\\\")*)+\"					  {printf("STRLIT(\"%s)\n",yytext);col_count=col_count+yyleng;BEGIN 0;}
 <STR>\\{proibidos}										{col_count++;printf("Line %d, col %d: invalid escape sequence (%s)\n",line_count,col_count,yytext);BEGIN ERRO;}
+<STR>[^\"]\n											{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}
 <STR>.													{col_count=col_count+yyleng;}
 <STR>\n|\r|(\r\n)										{line_count++;col_count=0;}
 
-<ERRO>({alfabeto}*|{numero}*|" "*)+\"					{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}					
+<ERRO>({alfabeto}*|{numero}*|" "*)+\"					{BEGIN 0;}					
 
 						
-\.|\?|\$|\#									{col_count++;printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
+\.|\?|\$|\#												{col_count++;printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
 "++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"	{printf("RESERVED(%s)\n",yytext);col_count=col_count+yyleng;}
 (({numero}+(""{numero}+)*)*"."(({numero}+(""+{numero}+)+)|{numero}+|{exponencial}{mais_ou_menos}?{numero}+(""+{numero}+)*)*)|({numero}+(""+{numero}+)*{exponencial}{mais_ou_menos}?{numero}+("_"+{numero}+)*)                      {printf("REALLIT(%s)\n",yytext);}
 {numero}+(({numero}|"_")*{numero}+)*					{printf("INTLIT(%s)\n",yytext);col_count=col_count+yyleng;}
