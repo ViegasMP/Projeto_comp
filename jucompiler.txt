@@ -12,8 +12,8 @@ proibidos			[^(f|n|r|t|"\\"|"\*")]
 #include<stdio.h>
 int line_count=1;
 int col_count=0;
-int ini_line=1;
-int ini_col=1;
+int ini_line=1; //guarda linha em que começa comentario ou string
+int ini_col=1; //guarda coluna em que começa comentario ou string
 %}
 
 %%
