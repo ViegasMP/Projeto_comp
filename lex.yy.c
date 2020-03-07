@@ -907,7 +907,7 @@ char *yytext;
 #line 26 "jucompiler.l"
 #include<stdio.h>
 int line_count=1;
-int col_count=0;
+int col_count=1;
 int ini_line=1; //guarda linha em que começa comentario ou string
 int ini_col=1; //guarda coluna em que começa comentario ou string
 int col_escape=0;
@@ -1194,7 +1194,7 @@ case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
 #line 39 "jucompiler.l"
-{BEGIN 0;line_count++;col_count=0;} //regressar ao normal
+{BEGIN 0;line_count++;col_count=1;} //regressar ao normal
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
@@ -1204,7 +1204,7 @@ YY_RULE_SETUP
 case 4:
 YY_RULE_SETUP
 #line 42 "jucompiler.l"
-{ini_line=line_count;ini_col = col_count+1;BEGIN COMMENT;col_count=col_count+yyleng;}
+{ini_line=line_count;ini_col = col_count;BEGIN COMMENT;col_count=col_count+yyleng;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
@@ -1219,7 +1219,7 @@ case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
 #line 45 "jucompiler.l"
-{line_count++;col_count=0;} //ignorar
+{line_count++;col_count=1;} //ignorar
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
@@ -1229,18 +1229,18 @@ YY_RULE_SETUP
 case 8:
 YY_RULE_SETUP
 #line 48 "jucompiler.l"
-{BEGIN STR;ini_line=line_count;ini_col = col_count+1;col_count=col_count+yyleng;}
+{BEGIN STR;ini_line=line_count;ini_col = col_count;col_count=col_count+yyleng;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 49 "jucompiler.l"
-{BEGIN ESCAPE;col_count=col_count+yyleng;col_escape=col_count;}
+{BEGIN ESCAPE;col_count=col_count+yyleng;col_escape=col_count-1;}
 	YY_BREAK
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
 #line 50 "jucompiler.l"
-{printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=0;}
+{printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=1;}
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
@@ -1261,7 +1261,7 @@ case 13:
 /* rule 13 can match eol */
 YY_RULE_SETUP
 #line 54 "jucompiler.l"
-{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=0;error_flag=0;}
+{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=1;error_flag=0;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -1512,12 +1512,12 @@ case 63:
 /* rule 63 can match eol */
 YY_RULE_SETUP
 #line 105 "jucompiler.l"
-{line_count++;col_count=0;}
+{line_count++;col_count=1;}
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
 #line 106 "jucompiler.l"
-{col_count=col_count+yyleng; printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
+{printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);col_count=col_count+yyleng;}
 	YY_BREAK
 case 65:
 YY_RULE_SETUP

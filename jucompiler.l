@@ -25,7 +25,7 @@ next_line												\n|\r|(\r\n)
 %{
 #include<stdio.h>
 int line_count=1;
-int col_count=0;
+int col_count=1;
 int ini_line=1; //guarda linha em que começa comentario ou string
 int ini_col=1; //guarda coluna em que começa comentario ou string
 int col_escape=0;
@@ -36,22 +36,22 @@ int l=1;
 %%
 
 "//"													{BEGIN COMMENT2;col_count=col_count+yyleng;}
-<COMMENT2>{next_line}									{BEGIN 0;line_count++;col_count=0;} //regressar ao normal
+<COMMENT2>{next_line}									{BEGIN 0;line_count++;col_count=1;} //regressar ao normal
 <COMMENT2>.	  											{col_count=col_count+yyleng;} //ignorar
 
-"/*" 													{ini_line=line_count;ini_col = col_count+1;BEGIN COMMENT;col_count=col_count+yyleng;}
+"/*" 													{ini_line=line_count;ini_col = col_count;BEGIN COMMENT;col_count=col_count+yyleng;}
 <COMMENT>"*/" 											{BEGIN 0; col_count=col_count+yyleng;} //regressar ao normal
 <COMMENT><<EOF>>										{printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);BEGIN 0;} //regressar ao normal
-<COMMENT>{next_line}  									{line_count++;col_count=0;} //ignorar
+<COMMENT>{next_line}  									{line_count++;col_count=1;} //ignorar
 <COMMENT>.	  											{col_count=col_count+yyleng;} //ignorar
 
-\"														{BEGIN STR;ini_line=line_count;ini_col = col_count+1;col_count=col_count+yyleng;}
-<STR>{chars}*\\											{BEGIN ESCAPE;col_count=col_count+yyleng;col_escape=col_count;}
-<ESCAPE>{next_line}									{printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=0;}
+\"														{BEGIN STR;ini_line=line_count;ini_col = col_count;col_count=col_count+yyleng;}
+<STR>{chars}*\\											{BEGIN ESCAPE;col_count=col_count+yyleng;col_escape=col_count-1;}
+<ESCAPE>{next_line}										{printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=1;}
 <ESCAPE>[^fnrt\\\"]										{BEGIN STR; printf("Line %d, col %d: invalid escape sequence (\\%s)\n",ini_line,col_escape,yytext);col_count=col_count+yyleng;error_flag=1;}
 <STR>{chars}*\"											{if(!error_flag){if(l)printf("STRLIT(\"%s)\n",yytext);}col_count=col_count+yyleng;error_flag=0;BEGIN 0;}
 <STR><<EOF>>											{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}
-<STR>{next_line}										{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=0;error_flag=0;}
+<STR>{next_line}										{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=1;error_flag=0;}
 <STR>({chars}|" "|"\t")*								{col_count=col_count+yyleng;}						
 
 {reserved}												{if(l)printf("RESERVED(%s)\n",yytext);col_count=col_count+yyleng;}
@@ -102,8 +102,8 @@ int l=1;
 "while"													{if(l)printf("WHILE\n");col_count=col_count+yyleng;}
 ({alfabeto}|{simbolo})+({numero}|{alfabeto}|{simbolo})* {if(l)printf("ID(%s)\n",yytext);col_count=col_count+yyleng;}
 {whitespace}           									{col_count+=yyleng;};
-{next_line}												{line_count++;col_count=0;}
-.														{col_count=col_count+yyleng; printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
+{next_line}												{line_count++;col_count=1;}
+.														{printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);col_count=col_count+yyleng;}
 
 
 
