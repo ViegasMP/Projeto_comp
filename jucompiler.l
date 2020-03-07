@@ -1,95 +1,110 @@
-alfabeto			[a-zA-Z]
-numero				[0-9]
-simbolo            		[$_]
-exponencial			[Ee]
-mais_ou_menos			[+-]
-proibidos			[^(f|n|r|t|"\\"|"\*")]
+%{
+/*
+		Carolina de Castilho Godinho	-	2017247087
+		Maria Paula de Alencar Viegas	-	2017125592
+*/
+%}
+
+
+
+alfabeto												[a-zA-Z]
+numero													[0-9]
+simbolo            										$|_
+exponencial												E|e
+mais_ou_menos											+|-
+whitespace  											" "|\t|\f
+chars													\\(f|n|r|t|\\|\")|[^"\n""\r""\"""\\"]
+reserved												"++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"
+next_line												\n|\r|(\r\n)  
+
 %X COMMENT
 %X COMMENT2
 %X STR
-%X ERRO
+%X ESCAPE
+
 %{
 #include<stdio.h>
 int line_count=1;
 int col_count=0;
 int ini_line=1; //guarda linha em que começa comentario ou string
 int ini_col=1; //guarda coluna em que começa comentario ou string
+int col_escape=0;
+int error_flag=0;
+int l=1;
 %}
 
 %%
 
 "//"													{BEGIN COMMENT2;col_count=col_count+yyleng;}
-<COMMENT2>\n|\r|(\r\n)  								{BEGIN 0;line_count++;col_count=0;} //regressar ao normal
+<COMMENT2>{next_line}									{BEGIN 0;line_count++;col_count=0;} //regressar ao normal
 <COMMENT2>.	  											{col_count=col_count+yyleng;} //ignorar
 
 "/*" 													{ini_line=line_count;ini_col = col_count+1;BEGIN COMMENT;col_count=col_count+yyleng;}
-<COMMENT>"*/" 											{BEGIN 0;col_count=col_count+yyleng;} //regressar ao normal
+<COMMENT>"*/" 											{BEGIN 0; col_count=col_count+yyleng;} //regressar ao normal
 <COMMENT><<EOF>>										{printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);BEGIN 0;} //regressar ao normal
-<COMMENT>\n|\r|(\r\n)  									{line_count++;} //ignorar
+<COMMENT>{next_line}  									{line_count++;col_count=0;} //ignorar
 <COMMENT>.	  											{col_count=col_count+yyleng;} //ignorar
 
-
 \"														{BEGIN STR;ini_line=line_count;ini_col = col_count+1;col_count=col_count+yyleng;}
+<STR>{chars}*\\											{BEGIN ESCAPE;col_count=col_count+yyleng;col_escape=col_count;}
+<ESCAPE>{next_line}									{printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=0;}
+<ESCAPE>[^fnrt\\\"]										{BEGIN STR; printf("Line %d, col %d: invalid escape sequence (\\%s)\n",ini_line,col_escape,yytext);col_count=col_count+yyleng;error_flag=1;}
+<STR>{chars}*\"											{if(!error_flag){if(l)printf("STRLIT(\"%s)\n",yytext);}col_count=col_count+yyleng;error_flag=0;BEGIN 0;}
 <STR><<EOF>>											{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}
-<STR>({alfabeto}*|{numero}*|" "*|(\\t)*|(\\f)*|(\\n)*|(\\r)*|(\\\*)*|(\t)*|(\\\\)*|(\\\")*)+\"					  {printf("STRLIT(\"%s)\n",yytext);col_count=col_count+yyleng;BEGIN 0;}
-<STR>\\{proibidos}										{col_count++;printf("Line %d, col %d: invalid escape sequence (%s)\n",line_count,col_count,yytext);BEGIN ERRO;}
-<STR>[^\"]\n											{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;}
-<STR>.													{col_count=col_count+yyleng;}
-<STR>\n|\r|(\r\n)										{line_count++;col_count=0;}
+<STR>{next_line}										{printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);BEGIN 0;line_count++;col_count=0;error_flag=0;}
+<STR>({chars}|" "|"\t")*								{col_count=col_count+yyleng;}						
 
-<ERRO>({alfabeto}*|{numero}*|" "*)+\"					{BEGIN 0;}					
+{reserved}												{if(l)printf("RESERVED(%s)\n",yytext);col_count=col_count+yyleng;}
+({numero}+("_"*{numero}+)*"."({numero}+("_"*{numero}+)*)?({exponencial}[+-]?{numero}+("_"*{numero}+)*)?)|({numero}+("_"*{numero}+)*)({exponencial}[+-]?{numero}+("_"*{numero}+)*)|"."{numero}+("_"*{numero}+)*({exponencial}[+-]?{numero}+("_"*{numero}+)*)?									{if(l)printf("REALLIT(%s)\n",yytext);col_count=col_count+yyleng;}
+([1-9]+(({numero}|"_")*{numero}+)*)|"0"					{if(l)printf("INTLIT(%s)\n",yytext);col_count=col_count+yyleng;}
+"true"|"false"											{if(l)printf("BOOLLIT(%s)\n",yytext);col_count=col_count+yyleng;}
+"&&"													{if(l)printf("AND\n");col_count=col_count+yyleng;}
+"="														{if(l)printf("ASSIGN\n");col_count=col_count+yyleng;}
+"*"														{if(l)printf("STAR\n");col_count=col_count+yyleng;}
+","														{if(l)printf("COMMA\n");col_count=col_count+yyleng;}
+"/"														{if(l)printf("DIV\n");col_count=col_count+yyleng;}
+"=="													{if(l)printf("EQ\n");col_count=col_count+yyleng;}	
+">="													{if(l)printf("GE\n");col_count=col_count+yyleng;}
+">"														{if(l)printf("GT\n");col_count=col_count+yyleng;}
+"{"														{if(l)printf("LBRACE\n");col_count=col_count+yyleng;}
+"<="													{if(l)printf("LE\n");col_count=col_count+yyleng;}
+"("														{if(l)printf("LPAR\n");col_count=col_count+yyleng;}
+"["														{if(l)printf("LSQ\n");col_count=col_count+yyleng;}
+"<"														{if(l)printf("LT\n");col_count=col_count+yyleng;}
+"-"														{if(l)printf("MINUS\n");col_count=col_count+yyleng;}
+"%"														{if(l)printf("MOD\n");col_count=col_count+yyleng;}
+"!="													{if(l)printf("NE\n");col_count=col_count+yyleng;}
+"!"														{if(l)printf("NOT\n");col_count=col_count+yyleng;}
+"||"													{if(l)printf("OR\n");col_count=col_count+yyleng;}
+"+"														{if(l)printf("PLUS\n");col_count=col_count+yyleng;}
+"}"														{if(l)printf("RBRACE\n");col_count=col_count+yyleng;}
+")"														{if(l)printf("RPAR\n");col_count=col_count+yyleng;}
+"]"														{if(l)printf("RSQ\n");col_count=col_count+yyleng;}
+";"														{if(l)printf("SEMICOLON\n");col_count=col_count+yyleng;}
+"->"													{if(l)printf("ARROW\n");col_count=col_count+yyleng;}
+"<<"													{if(l)printf("LSHIFT\n");col_count=col_count+yyleng;}
+">>"													{if(l)printf("RSHIFT\n");col_count=col_count+yyleng;}
+"^"														{if(l)printf("XOR\n");col_count=col_count+yyleng;}
+"boolean"												{if(l)printf("BOOL\n");col_count=col_count+yyleng;}
+"class"													{if(l)printf("CLASS\n");col_count=col_count+yyleng;}
+".length"												{if(l)printf("DOTLENGTH\n");col_count=col_count+yyleng;}
+"double"												{if(l)printf("DOUBLE\n");col_count=col_count+yyleng;}
+"else"													{if(l)printf("ELSE\n");col_count=col_count+yyleng;}
+"if"													{if(l)printf("IF\n");col_count=col_count+yyleng;}
+"int"													{if(l)printf("INT\n");col_count=col_count+yyleng;}
+"System.out.print"										{if(l)printf("PRINT\n");col_count=col_count+yyleng;}
+"Integer.parseInt"										{if(l)printf("PARSEINT\n");col_count=col_count+yyleng;}
+"public"												{if(l)printf("PUBLIC\n");col_count=col_count+yyleng;}
+"return"												{if(l)printf("RETURN\n");col_count=col_count+yyleng;}
+"static"												{if(l)printf("STATIC\n");col_count=col_count+yyleng;}
+"String"												{if(l)printf("STRING\n");col_count=col_count+yyleng;}
+"void"													{if(l)printf("VOID\n");col_count=col_count+yyleng;}
+"while"													{if(l)printf("WHILE\n");col_count=col_count+yyleng;}
+({alfabeto}|{simbolo})+({numero}|{alfabeto}|{simbolo})* {if(l)printf("ID(%s)\n",yytext);col_count=col_count+yyleng;}
+{whitespace}           									{col_count+=yyleng;};
+{next_line}												{line_count++;col_count=0;}
+.														{col_count=col_count+yyleng; printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
 
-						
-\.|\?|\$|\#												{col_count++;printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);}
-"++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"	{printf("RESERVED(%s)\n",yytext);col_count=col_count+yyleng;}
-(({numero}+(""{numero}+)*)*"."(({numero}+(""+{numero}+)+)|{numero}+|{exponencial}{mais_ou_menos}?{numero}+(""+{numero}+)*)*)|({numero}+(""+{numero}+)*{exponencial}{mais_ou_menos}?{numero}+("_"+{numero}+)*)                      {printf("REALLIT(%s)\n",yytext);}
-{numero}+(({numero}|"_")*{numero}+)*					{printf("INTLIT(%s)\n",yytext);col_count=col_count+yyleng;}
-"true"|"false"											{printf("BOOLLIT(%s)\n",yytext);col_count=col_count+yyleng;}
-"&&"													{printf("AND\n");col_count=col_count+yyleng;}
-"="														{printf("ASSIGN\n");col_count=col_count+yyleng;}
-"*"														{printf("STAR\n");col_count=col_count+yyleng;}
-","														{printf("COMMA\n");col_count=col_count+yyleng;}
-"/"														{printf("DIV\n");col_count=col_count+yyleng;}
-"=="													{printf("EQ\n");col_count=col_count+yyleng;}	
-">="													{printf("GE\n");col_count=col_count+yyleng;}
-">"														{printf("GT\n");col_count=col_count+yyleng;}
-"{"														{printf("LBRACE\n");col_count=col_count+yyleng;}
-"<="													{printf("LE\n");col_count=col_count+yyleng;}
-"("														{printf("LPAR\n");col_count=col_count+yyleng;}
-"["														{printf("LSQ\n");col_count=col_count+yyleng;}
-"<"														{printf("LT\n");col_count=col_count+yyleng;}
-"-"														{printf("MINUS\n");col_count=col_count+yyleng;}
-"%"														{printf("MOD\n");col_count=col_count+yyleng;}
-"!="													{printf("NE\n");col_count=col_count+yyleng;}
-"!"														{printf("NOT\n");col_count=col_count+yyleng;}
-"||"													{printf("OR\n");col_count=col_count+yyleng;}
-"+"														{printf("PLUS\n");col_count=col_count+yyleng;}
-"}"														{printf("RBRACE\n");col_count=col_count+yyleng;}
-")"														{printf("RPAR\n");col_count=col_count+yyleng;}
-"]"														{printf("RSQ\n");col_count=col_count+yyleng;}
-";"														{printf("SEMICOLON\n");col_count=col_count+yyleng;}
-"->"													{printf("ARROW\n");col_count=col_count+yyleng;}
-"<<"													{printf("LSHIFT\n");col_count=col_count+yyleng;}
-">>"													{printf("RSHIFT\n");col_count=col_count+yyleng;}
-"^"														{printf("XOR\n");col_count=col_count+yyleng;}
-"boolean"												{printf("BOOL\n");col_count=col_count+yyleng;}
-"class"													{printf("CLASS\n");col_count=col_count+yyleng;}
-".length"												{printf("DOTLENGTH\n");col_count=col_count+yyleng;}
-"double"												{printf("DOUBLE\n");col_count=col_count+yyleng;}
-"else"													{printf("ELSE\n");col_count=col_count+yyleng;}
-"if"													{printf("IF\n");col_count=col_count+yyleng;}
-"int"													{printf("INT\n");col_count=col_count+yyleng;}
-"System.out.print"										{printf("PRINT\n");col_count=col_count+yyleng;}
-"Integer.parseInt"										{printf("PARSEINT\n");col_count=col_count+yyleng;}
-"public"												{printf("PUBLIC\n");col_count=col_count+yyleng;}
-"return"												{printf("RETURN\n");col_count=col_count+yyleng;}
-"static"												{printf("STATIC\n");col_count=col_count+yyleng;}
-"String"												{printf("STRING\n");col_count=col_count+yyleng;}
-"void"													{printf("VOID\n");col_count=col_count+yyleng;}
-"while"													{printf("WHILE\n");col_count=col_count+yyleng;}
-({alfabeto}|{simbolo})+({numero}|{alfabeto}|{simbolo})* {printf("ID(%s)\n",yytext);col_count=col_count+yyleng;}
-.														{col_count=col_count+yyleng;}
-\n														{line_count++;col_count=0;}
 
 
 %%
