@@ -58,6 +58,14 @@
 %token WHILE
 %token ID
 
+%left OR AND
+%left EQ NE LT LE GT GE
+%left PLUS MINUS
+%left STAR DIV MOD
+%left COMMA
+%right ASSIGN
+%right NOT
+
 %%
 
 %{
@@ -65,45 +73,103 @@
 		TIRAR os '{' '}'- significa 0 ou mais repetições
 */
 %}
-
-program: 	CLASS ID LBRACE { MethodDecl | FieldDecl | SEMICOLON } RBRACE
+programRepetition:													{$$ = NULL;}
+		|		programRepetition MethodDecl 
+		|		programRepetition FieldDecl 
+		|		programRepetition  SEMICOLON
+		;
+program: 	CLASS ID LBRACE programRepetition RBRACE
 		;
 MethodDecl: 	PUBLIC STATIC MethodHeader MethodBody
-    		;
-FieldDecl: 		PUBLIC STATIC Type ID { COMMA ID } SEMICOLON
+    	;
+CommaIDRepetition:													{$$ = NULL;}
+			|		 CommaIDRepetition COMMA ID 
+			;	
+FieldDecl: 		PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
+		|		error SEMICOLON
 		;
-Type: 			BOOL | INT | DOUBLE
+Type:		BOOL 
+		| 	INT 
+		| 	DOUBLE
 		;
-MethodHeader: 		( Type | VOID ) ID LPAR [ FormalParams ] RPAR
+MethodHeader: 		Type ID LPAR FormalParams RPAR
+		|			Type ID LPAR RPAR
+		|			VOID ID LPAR FormalParams RPAR
+		|			VOID ID LPAR RPAR
 		;
-FormalParams: 		Type ID { COMMA Type ID }
-			|	STRING LSQ RSQ ID
+FormalParamsRepetition:												{$$ = NULL;}
+				| 		FormalParamsRepetition COMMA Type ID
+				;
+
+FormalParams: 		Type ID FormalParamsRepetition
+			|		STRING LSQ RSQ ID
 		;
-MethodBody:		LBRACE { Statement | VarDecl } RBRACE
+MethodBodyRepetition:												{$$ = NULL;}
+			|		 MethodBodyRepetition Statement
+			|		MethodBodyRepetition VarDecl
+			;
+MethodBody:		LBRACE MethodBodyRepetition RBRACE
+		;	
+VarDecl:		Type ID CommaIDRepetition SEMICOLON
 		;
-VarDecl:		Type ID { COMMA ID } SEMICOLON
-		;
-Statement:		LBRACE { Statement } RBRACE
-		|	IF LPAR Expr RPAR Statement [ ELSE Statement ]
+StatementRepetition:												{$$ = NULL;}
+				|		StatementRepetition Statement				
+				;
+Statement:	LBRACE StatementRepetition RBRACE
+		|	IF LPAR Expr RPAR Statement
+		|	IF LPAR Expr RPAR Statement ELSE Statement
 		|	WHILE LPAR Expr RPAR Statement
-		|	RETURN [ Expr ] SEMICOLON
-		|	[ ( MethodInvocation | Assignment | ParseArgs ) ] SEMICOLON
-		|	PRINT LPAR ( Expr | STRLIT ) RPAR SEMICOLON
+		|	RETURN Expr SEMICOLON
+		|	RETURN SEMICOLON		
+		|   SEMICOLON
+		|	MethodInvocation SEMICOLON
+		|	Assignment SEMICOLON
+		|   ParseArgs SEMICOLON
+		|	PRINT LPAR Expr RPAR SEMICOLON
+		|	PRINT LPAR STRLIT RPAR SEMICOLON
+		|	error SEMICOLON
 		;
-MethodInvocation: 	ID LPAR [ Expr { COMMA Expr } ] RPAR
-		;
+CommaExprRepetition:												{$$ = NULL;}
+				|	CommaExprRepetition COMMA Expr
+				;
+MethodInvocation: 	ID LPAR Expr CommaExprRepetition RPAR
+			|		ID LPAR  RPAR
+			|		ID LPAR error RPAR
+			;
 Assignment:		ID ASSIGN Expr
 		;
 ParseArgs:		PARSEINT LPAR ID LSQ Expr RSQ LPAR
+		|		PARSEINT LPAR error RPAR
 		;
-Expr:			Expr ( PLUS | MINUS | STAR | DIV | MOD ) Expr
-		|	Expr ( AND | OR | XOR | LSHIFT | RSHIFT ) Expr
-		|	Expr ( EQ | GE | GT | LE | LT | NE ) Expr
-		|	( MINUS | NOT | PLUS ) Expr
+Expr:		Expr PLUS Expr
+		|	Expr MINUS Expr
+		|	Expr STAR Expr
+		|	Expr DIV Expr
+		|	Expr MOD Expr
+		|	Expr AND Expr
+		|	Expr OR  Expr
+		|	Expr XOR Expr
+		|	Expr LSHIFT Expr
+		|	Expr RSHIFT Expr
+		|	Expr EQ Expr
+		|	Expr GE Expr
+		|	Expr GT Expr
+		|	Expr LE Expr
+		|	Expr LT Expr
+		|	Expr NE Expr
+		|	MINUS Expr
+		|	NOT Expr
+		|	PLUS Expr
 		|	LPAR Expr RPAR
-		|	MethodInvocation | Assignment | ParseArgs
-		|	ID [ DOTLENGTH ]
-		|	INTLIT | REALLIT | BOOLLIT
+		|	MethodInvocation 
+		|	Assignment 
+		|	ParseArgs
+		|	ID DOTLENGTH
+		|	ID 
+		|	INTLIT
+		|   REALLIT 
+		|   BOOLLIT
+		| 	LPAR error RPAR
 		;
 
 
