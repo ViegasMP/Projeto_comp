@@ -2,9 +2,24 @@
 /*
 		Carolina de Castilho Godinho	-	2017247087
 		Maria Paula de Alencar Viegas	-	2017125592
+
+		lex jucompiler.l
+		yacc -d jucompiler.y
+		cc -o jucompiler y.tab.c lex.yy.c
 */
 %}
+%{
+#include <stdbool.h> 
+#include "y.tab.h"
 
+bool l;
+int line_count=1;
+int col_count=1;
+int ini_line=1; //guarda linha em que começa comentario ou string
+int ini_col=1; //guarda coluna em que começa comentario ou string
+int col_escape=0;
+int error_flag=0;
+%}
 
 
 alfabeto												[a-zA-Z]
@@ -21,17 +36,6 @@ next_line												\n|\r|(\r\n)
 %X COMMENT2
 %X STR
 %X ESCAPE
-
-%{
-#include<stdio.h>
-int line_count=1;
-int col_count=1;
-int ini_line=1; //guarda linha em que começa comentario ou string
-int ini_col=1; //guarda coluna em que começa comentario ou string
-int col_escape=0;
-int error_flag=0;
-int l=1;
-%}
 
 %%
 
@@ -107,10 +111,28 @@ int l=1;
 
 
 
+
 %%
 
-int main()
+int main(int argc, char **argv)
 {
+	if(argc == 2){
+		if (strcmp(argv[1],"-l") == 0){
+			l = true;
+		}
+		else if (strcmp(argv[1],"-e1") == 0){
+			l = false;
+		}
+		else{
+			return 0;
+		}
+	}
+	else if (argc == 1){
+		l = false;
+	}
+	else{
+		return 0;
+	}
 	yylex();
 	return 0;
 }
