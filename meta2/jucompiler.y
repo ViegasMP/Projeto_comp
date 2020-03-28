@@ -2,20 +2,21 @@
 /*
 		Carolina de Castilho Godinho	-	2017247087
 		Maria Paula de Alencar Viegas	-	2017125592
-
-Correr com:
-lex jucompiler.l
-yacc -d jucompiler.y
-cc -o jucompiler y.tab.c lex.yy.c
-
+		Correr com:
+		lex jucompiler.l
+		yacc -d jucompiler.y
+		cc -o jucompiler y.tab.c lex.yy.c
 */
 %}
 %{
-    	#include <stdio.h>
-    	int yylex(void);
-	void yyerror;
-	extern FILE* yyin;
-	extern char* yytext;
+#include <stdio.h>
+int yylex(void);
+void yyerror (char *s);
+extern char* yytext;
+extern int line_count;
+extern int col_count;
+extern int ini_line; //guarda linha em que começa comentario ou string
+extern int ini_col; //guarda coluna em que começa comentario ou string
 %}
 
 %token STRLIT
@@ -85,7 +86,7 @@ cc -o jucompiler y.tab.c lex.yy.c
 
 program: 				CLASS ID LBRACE programRepetition RBRACE
 				;
-programRepetition:			{$$ = NULL;}
+programRepetition:			
 				|	programRepetition MethodDecl 
 				|	programRepetition FieldDecl 
 				|	programRepetition  SEMICOLON
@@ -95,7 +96,7 @@ MethodDecl: 				PUBLIC STATIC MethodHeader MethodBody
 FieldDecl: 				PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
 				|	error SEMICOLON
 				;
-CommaIDRepetition:			{$$ = NULL;}
+CommaIDRepetition:			
 				|	CommaIDRepetition COMMA ID 
 				;	
 Type:					BOOL 
@@ -110,12 +111,12 @@ MethodHeader: 				Type ID LPAR FormalParams RPAR
 FormalParams: 				Type ID FormalParamsRepetition
 				|	STRING LSQ RSQ ID
 				;
-FormalParamsRepetition:			{$$ = NULL;}
+FormalParamsRepetition:			
 				| 	FormalParamsRepetition COMMA Type ID
 				;
 MethodBody:				LBRACE MethodBodyRepetition RBRACE
 				;	
-MethodBodyRepetition:			{$$ = NULL;}
+MethodBodyRepetition:			
 				|	MethodBodyRepetition Statement
 				|	MethodBodyRepetition VarDecl
 				;
@@ -127,7 +128,7 @@ Statement:				LBRACE StatementRepetition RBRACE
 				|	WHILE LPAR Expr RPAR Statement
 				|	RETURN Expr SEMICOLON
 				|	RETURN SEMICOLON		
-				|   	SEMICOLON
+				|  	SEMICOLON
 				|	MethodInvocation SEMICOLON
 				|	Assignment SEMICOLON
 				|   	ParseArgs SEMICOLON
@@ -135,14 +136,14 @@ Statement:				LBRACE StatementRepetition RBRACE
 				|	PRINT LPAR STRLIT RPAR SEMICOLON
 				|	error SEMICOLON
 				;
-StatementRepetition:			{$$ = NULL;}
+StatementRepetition:			
 				|	StatementRepetition Statement				
 				;
 MethodInvocation: 			ID LPAR Expr CommaExprRepetition RPAR
 				|	ID LPAR  RPAR
 				|	ID LPAR error RPAR
 				;
-CommaExprRepetition:			{$$ = NULL;}
+CommaExprRepetition:			
 				|	CommaExprRepetition COMMA Expr
 				;
 Assignment:				ID ASSIGN Expr
@@ -185,10 +186,5 @@ Expr:					Expr PLUS Expr
 %%
 
 void yyerror (char *s) {
-	printf("Line %d, col %d: %s: %s\n",num_linha,num_coluna,s,yytext);
-}
-
-int main() {
-    yyparse();
-    return 0;
+	printf("Line %d, col %d: %s: %s\n",line_count,col_count,s,yytext);
 }
