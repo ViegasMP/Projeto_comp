@@ -1,6 +1,9 @@
 #include "tree_functions.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-no* cria_no(char* nome){
+No* cria_no(char* nome){
 	printf("Criando no %s\n", nome);
 	no* n = malloc(sizeof(no));
 	n->nome = strdup(nome);
@@ -8,15 +11,15 @@ no* cria_no(char* nome){
 	return n;
 }
 
-void add_next(no* n1, no* n2){
-	no* aux = n1;
+void add_next(No* n1, no* n2){
+	No* aux = n1;
 	while (aux->next != NULL){
 		aux = aux->next;
 	}
 	aux->next = n2;
 }
 
-void add_filho(no* n, no* fiho){
+void add_filho(No* n, No* fiho){
 	if (n->filho == NULL){
 		n->filho = filho;
 	} else {
@@ -24,14 +27,14 @@ void add_filho(no* n, no* fiho){
 	}
 }
 
-no* new_id(char* nome){
+No* new_id(char* nome){
 	char* str = (char *) malloc(strlen(nome) + 5);
 	sprintf(str, "Id(%s)", name);
 	return create_node(str);
 }
 
-void print_arvore (no n){
-    no aux = n;
+void print_arvore (No n){
+    No aux = n;
     while (aux) {
 		for (int i = 0; i < aux->nivel; i++) printf("..");
         printf("%s\n", aux->name);
@@ -39,8 +42,8 @@ void print_arvore (no n){
     }
 }
 
-void destruir_arvore (no n) {
-    no aux;
+void destruir_arvore (No n) {
+    No aux;
     while (l != NULL) {
 		aux = l;
 		n = aux->next;
