@@ -34,8 +34,8 @@ struct no* par;
 	struct no* no;
 }
 
-%type <no> Program MethodHeader MethodDecl ProgramRepetition FieldDecl MethodBody Type FormalParamsRepetition FormalParams
-%type <str> ID INTLIT REALLIT STRLIT
+%type <no> Program MethodHeader MethodDecl ProgramRepetition FieldDecl MethodBody Type FormalParamsRepetition FormalParams CommaIDRepetition MethodBodyRepetition Statement VarDecl StatementRepetition Expr MethodInvocation Assignment ParseArgs CommaExprRepetition
+%type <str> ID INTLIT REALLIT STRLIT BOOLLIT
 
 
 %token STRLIT
@@ -124,8 +124,11 @@ MethodDecl: 				PUBLIC STATIC MethodHeader MethodBody				{
 FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON	{$$ = NULL;}
 						|	error SEMICOLON										{$$ = NULL;}	
 						;
-CommaIDRepetition:			
-						|	CommaIDRepetition COMMA ID 
+CommaIDRepetition:																{$$ = NULL;}						
+						|	CommaIDRepetition COMMA ID 							{
+																					$$ = $1;
+																					add_next($1, new_id($3));
+																				}
 						;	
 Type:						BOOL 												{$$ = cria_no("Bool");}
 						| 	INT 												{$$ = cria_no("Int");}
@@ -157,14 +160,18 @@ MethodHeader: 				Type ID LPAR FormalParams RPAR						{
 						;
 FormalParams: 				Type ID FormalParamsRepetition						{
 																					$$ = cria_no("MethodParams");
-																					add_filho($$, $1);
+																					par = cria_no("ParamDecl");
+																					add_filho($$, par);
+																					add_next(par, $1);
 																					aux = new_id($2);
 																					add_next($1, aux);
 																					add_next(aux, $3);
 																				}				
 						|	STRING LSQ RSQ ID									{
 																					$$ = cria_no("MethodParams");
-																					add_filho($$, cria_no("StringArray"));
+																					par = cria_no("ParamDecl");
+																					add_filho($$, par);
+																					add_filho(par, cria_no("StringArray"));
 																					add_filho($$, new_id($4));
 																				}
 						;
@@ -177,76 +184,214 @@ FormalParamsRepetition:															{$$ = NULL;}
 						;
 MethodBody:					LBRACE MethodBodyRepetition RBRACE					{	
 																					$$ = cria_no("MethodBody");
-																					add_next($$, $2);
+																					add_filho($$, $2);
 																				}
 						;	
-MethodBodyRepetition:			
-						|	MethodBodyRepetition Statement						{	
-																					$$ = cria_no("MethodBody");
-																					add_next($$, $2);
+MethodBodyRepetition:															{$$ = NULL;}
+						|	MethodBodyRepetition Statement						{$$ = $2;}
+						|	MethodBodyRepetition VarDecl						{$$ = $2;}
+						;
+VarDecl:					Type ID CommaIDRepetition SEMICOLON					{
+																					$$ = cria_no("VarDecl");
+																					add_filho($$,$1);
+																					aux = new_id($2);
+																					add_next($1,aux);
+																					add_next(aux, $3);
 																				}
-						|	MethodBodyRepetition VarDecl
 						;
-VarDecl:					Type ID CommaIDRepetition SEMICOLON
+Statement:					LBRACE StatementRepetition RBRACE					{$$ = $2;}
+						|	IF LPAR Expr RPAR Statement %prec IF				{
+																					aux = cria_no("If");
+                                                            						add_filho(aux, $3);
+                                                            						add_next($3, $5);
+                                                            						add_next($5, cria_no("Block"));
+                                                            						$$ = aux;
+																				}
+						|	IF LPAR Expr RPAR Statement ELSE Statement			{
+																					aux = cria_no("If");
+                                                            						add_filho(aux, $3);
+                                                            						struct no* aux2 = cria_no("Else");
+                                                            						add_next($3, $5);
+                                                            						add_next($5, cria_no("Block"));
+																					add_next(aux, aux2);
+																					add_filho(aux2, $7);
+                                                            						$$ = aux;
+																				}
+						|	WHILE LPAR Expr RPAR Statement						{
+																					aux = cria_no("While");
+                                                            						add_filho(aux, $3);
+                                                            						add_next($3, $5);
+                                                            						$$ = aux;
+																				}
+						|	RETURN Expr SEMICOLON								{
+																					aux = cria_no("Return");
+                                                            						add_filho(aux, $2);
+                                                            						$$ = aux;
+																				}
+						|	RETURN SEMICOLON									{$$ = cria_no("Return");}
+						|  	SEMICOLON											{$$ = NULL;}
+						|	MethodInvocation SEMICOLON							{$$ = $1;}	
+						|	Assignment SEMICOLON								{$$ = $1;}
+						|   ParseArgs SEMICOLON									{$$ = $1;}
+						|	PRINT LPAR Expr RPAR SEMICOLON						{
+																					aux = cria_no("Print");
+                                                            						add_filho(aux, $3);
+                                                            						$$ = aux;
+																				}
+						|	PRINT LPAR STRLIT RPAR SEMICOLON					{
+																					aux = cria_no("Print");
+                                                            						add_filho(aux, new_strlit($3));
+                                                            						$$ = aux;
+																				}
+						|	error SEMICOLON										{$$ = NULL;}
 						;
-Statement:					LBRACE StatementRepetition RBRACE
-						|	IF LPAR Expr RPAR Statement %prec IF
-						|	IF LPAR Expr RPAR Statement ELSE Statement
-						|	WHILE LPAR Expr RPAR Statement
-						|	RETURN Expr SEMICOLON
-						|	RETURN SEMICOLON		
-						|  	SEMICOLON
-						|	MethodInvocation SEMICOLON
-						|	Assignment SEMICOLON
-						|   	ParseArgs SEMICOLON
-						|	PRINT LPAR Expr RPAR SEMICOLON
-						|	PRINT LPAR STRLIT RPAR SEMICOLON
-						|	error SEMICOLON
+StatementRepetition:															{$$ = NULL;}
+						|	StatementRepetition Statement						{$$ = $2;}
 						;
-StatementRepetition:			
-						|	StatementRepetition Statement				
+MethodInvocation: 			ID LPAR Expr CommaExprRepetition RPAR				{
+																					$$ = new_id($1);
+																					add_next($$, $3);
+																					add_next($3, $4);
+																				}
+						|	ID LPAR RPAR										{$$ = new_id($1);}
+						|	ID LPAR error RPAR									{$$ = NULL;}
 						;
-MethodInvocation: 			ID LPAR Expr CommaExprRepetition RPAR
-						|	ID LPAR  RPAR
-						|	ID LPAR error RPAR
+CommaExprRepetition:															{$$ = NULL;}
+						|	CommaExprRepetition COMMA Expr						{$$ = $3;}
 						;
-CommaExprRepetition:			
-						|	CommaExprRepetition COMMA Expr
+Assignment:					ID ASSIGN Expr										{
+																					$$ = new_id($1);
+																					add_next($$, $3);
+																				}
 						;
-Assignment:					ID ASSIGN Expr
+ParseArgs:					PARSEINT LPAR ID LSQ Expr RSQ RPAR					{
+																					$$ = cria_no("ParseArgs");
+																					add_filho( $$,new_id($3)) ;
+																					add_filho($$, $5);
+																				}
+						|	PARSEINT LPAR error RPAR							{$$ = NULL;}
 						;
-ParseArgs:					PARSEINT LPAR ID LSQ Expr RSQ RPAR
-						|	PARSEINT LPAR error RPAR
-						;
-Expr:						Expr PLUS Expr
-						|	Expr MINUS Expr
-						|	Expr STAR Expr
-						|	Expr DIV Expr
-						|	Expr MOD Expr
-						|	Expr AND Expr
-						|	Expr OR  Expr
-						|	Expr XOR Expr
-						|	Expr LSHIFT Expr
-						|	Expr RSHIFT Expr
-						|	Expr EQ Expr
-						|	Expr GE Expr
-						|	Expr GT Expr
-						|	Expr LE Expr
-						|	Expr LT Expr
-						|	Expr NE Expr
-						|	MINUS Expr
-						|	NOT Expr
-						|	PLUS Expr
-						|	LPAR Expr RPAR
-						|	MethodInvocation 
-						|	Assignment 
-						|	ParseArgs
-						|	ID DOTLENGTH
-						|	ID 									
-						|	INTLIT
-						|  	REALLIT 
-						|  	BOOLLIT
-						| 	LPAR error RPAR
+Expr:						Expr PLUS Expr										{
+																					aux = cria_no("Plus");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr MINUS Expr										{
+																					aux = cria_no("Minus");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr STAR Expr										{
+																					aux = cria_no("Star");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr DIV Expr										{
+																					aux = cria_no("Div");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr MOD Expr										{
+																					aux = cria_no("Mod");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr AND Expr										{
+																					aux = cria_no("And");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr OR  Expr										{
+																					aux = cria_no("Or");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr XOR Expr										{
+																					aux = cria_no("Xor");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr LSHIFT Expr									{
+																					aux = cria_no("Lshift");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr RSHIFT Expr									{
+																					aux = cria_no("Rshift");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr EQ Expr										{
+																					aux = cria_no("Eq");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr GE Expr										{
+																					aux = cria_no("Ge");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr GT Expr										{
+																					aux = cria_no("Gt");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr LE Expr										{
+																					aux = cria_no("Le");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr LT Expr										{
+																					aux = cria_no("Lt");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	Expr NE Expr										{
+																					aux = cria_no("Ne");
+																					add_filho(aux, $1);
+																					add_filho(aux, $3);
+																					$$ = aux;
+																				}
+						|	MINUS Expr											{
+																					aux = cria_no("Minus");
+                            														add_filho(aux, $2);
+                            														$$ = aux;
+																				}
+						|	NOT Expr											{
+																					aux = cria_no("Not");
+                            														add_filho(aux, $2);
+                            														$$ = aux;
+																				}
+						|	PLUS Expr											{
+																					aux = cria_no("Plus");
+                            														add_filho(aux, $2);
+                            														$$ = aux;
+																				}
+						|	LPAR Expr RPAR										{$$=$2;}
+						|	MethodInvocation 									{$$ = $1;}
+						|	Assignment 											{$$ = $1;}
+						|	ParseArgs											{$$ = $1;}
+						|	ID DOTLENGTH										{$$ = new_id($1);}
+						|	ID 													{$$ = cria_no($1);}			
+						|	INTLIT												{$$ = new_intlit($1);}
+						|  	REALLIT 											{$$ = new_reallit($1);}
+						|  	BOOLLIT												{$$ = new_boollit($1);}
+						| 	LPAR error RPAR										{$$ = NULL;}
 						;
 
 
