@@ -5,12 +5,13 @@
 		Correr com:
 		lex jucompiler.l
 		yacc -d jucompiler.y
-		cc -o jucompiler y.tab.c lex.yy.c
+		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c
 */
 %}
 %{
 #include <stdio.h>
 #include <stdbool.h> 
+#include "tree_functions.h"
 int yylex(void);
 void yyerror (char *s);
 extern char* yytext;
@@ -20,11 +21,22 @@ extern int ini_line; //guarda linha em que começa comentario ou string
 extern int ini_col; //guarda coluna em que começa comentario ou string
 extern bool e2;
 extern int col_syntax;
+struct no* tree;
+struct no* aux;
+struct no* type;
+struct no* header;
+struct no* body;
+struct no* par;
 %}
 
 %union{
 	char * str;
+	struct no* no;
 }
+
+%type <no> Program Type MethodHeader MethodDecl ProgramRepetition
+%type <str> ID INTLIT REALLIT STRLIT
+
 
 %token STRLIT
 %token RESERVED
@@ -91,31 +103,51 @@ extern int col_syntax;
 
 %%
 
-program: 				CLASS ID LBRACE programRepetition RBRACE
+Program: 			CLASS ID LBRACE ProgramRepetition RBRACE		{	
+																		tree = cria_no("Program");
+																		add_filho(tree, $4);
+																	}
 				;
-programRepetition:			
-				|	programRepetition MethodDecl 
-				|	programRepetition FieldDecl 
-				|	programRepetition SEMICOLON
+ProgramRepetition:													{$$ = NULL;}							
+				|	ProgramRepetition MethodDecl 					{add_next($1, $2); $$ = $1;}	
+				|	ProgramRepetition FieldDecl 					{add_next($1, $2); $$ = $1;}
+				|	ProgramRepetition SEMICOLON						{$$ = $1;}
 				;
-MethodDecl: 				PUBLIC STATIC MethodHeader MethodBody
+MethodDecl: 		PUBLIC STATIC MethodHeader MethodBody			{	
+																		aux = cria_no("MethodDecl");
+																		header = cria_no("MethodHeader");
+																		add_filho(aux, header);
+																		add_filho(header, $3);
+                                                                        body = cria_no("MethodBody");
+                                                                        add_filho(aux, body);
+																		add_filho(body, $4);
+                                                                        $$ = aux;
+																	}
     				;
-FieldDecl: 				PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
-				|	error SEMICOLON
+FieldDecl: 			PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
+				|	error SEMICOLON										
 				;
 CommaIDRepetition:			
 				|	CommaIDRepetition COMMA ID 
 				;	
-Type:					BOOL 
-				| 	INT 
-				| 	DOUBLE
+Type:				BOOL 											{$$ = cria_no("Bool");}
+				| 	INT 											{$$ = cria_no("Int");}
+				| 	DOUBLE											{$$ = cria_no("Double");}
 				;
-MethodHeader: 				Type ID LPAR FormalParams RPAR
+MethodHeader: 		Type ID LPAR FormalParams RPAR					{	
+																		add_filho(header, $1);
+																		header = NULL;
+																		aux = new_id(%2);
+																		add_next($1, aux);
+                                                                        par = cria_no("MethodParams");
+                                                                        add_next(aux, par);
+                                                                        $$ = aux;
+																	}
 				|	Type ID LPAR RPAR
 				|	VOID ID LPAR FormalParams RPAR
 				|	VOID ID LPAR RPAR
 				;
-FormalParams: 				Type ID FormalParamsRepetition
+FormalParams: 		Type ID FormalParamsRepetition					
 				|	STRING LSQ RSQ ID
 				;
 FormalParamsRepetition:			
@@ -158,7 +190,7 @@ Assignment:				ID ASSIGN Expr
 ParseArgs:				PARSEINT LPAR ID LSQ Expr RSQ RPAR
 				|	PARSEINT LPAR error RPAR
 				;
-Expr:					Expr PLUS Expr
+Expr:				Expr PLUS Expr
 				|	Expr MINUS Expr
 				|	Expr STAR Expr
 				|	Expr DIV Expr
@@ -182,7 +214,7 @@ Expr:					Expr PLUS Expr
 				|	Assignment 
 				|	ParseArgs
 				|	ID DOTLENGTH
-				|	ID 
+				|	ID 									
 				|	INTLIT
 				|  	REALLIT 
 				|  	BOOLLIT
