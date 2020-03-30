@@ -34,7 +34,7 @@ struct no* par;
 	struct no* no;
 }
 
-%type <no> Program Type MethodHeader MethodDecl ProgramRepetition FieldDecl
+%type <no> Program MethodHeader MethodDecl ProgramRepetition FieldDecl MethodBody Type FormalParamsRepetition FormalParams
 %type <str> ID INTLIT REALLIT STRLIT
 
 
@@ -103,115 +103,151 @@ struct no* par;
 
 %%
 
-Program: 			CLASS ID LBRACE ProgramRepetition RBRACE		{	
-																		tree = cria_no("Program");
-																		aux = new_id($2);
-																		add_filho(tree, aux);
-																		add_next(aux, $4);
-																	}													
-				;
-ProgramRepetition:													{$$ = NULL;}							
-				|	ProgramRepetition MethodDecl 					{add_next($1, $2); $$ = $1;}
-				|	ProgramRepetition FieldDecl 					{add_next($1, $2); $$ = $1;}
-				|	ProgramRepetition SEMICOLON						{$$ = $1;}
-				;
-MethodDecl: 		PUBLIC STATIC MethodHeader MethodBody			{	
-																		aux = cria_no("MethodDecl");
-																		add_next(tree, aux);
-																		header = cria_no("MethodHeader");
-																		add_filho(aux, header);
-																		add_filho(header, $3);
-                                                                        $$ = aux;
-																	}
-    				;
-FieldDecl: 			PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON {$$ = NULL;}
-				|	error SEMICOLON									{$$ = NULL;}	
-				;
+Program: 					CLASS ID LBRACE ProgramRepetition RBRACE			{	
+																					tree = cria_no("Program");
+																					aux = new_id($2);
+																					add_filho(tree, aux);
+																					add_next(aux, $4);
+																				}													
+						;
+ProgramRepetition:																{$$ = NULL;}							
+						|	ProgramRepetition MethodDecl 						{$$ = $2;}
+						|	ProgramRepetition FieldDecl 						{$$ = $2;}
+						|	ProgramRepetition SEMICOLON							{$$ = $1;}
+						;
+MethodDecl: 				PUBLIC STATIC MethodHeader MethodBody				{	
+																					$$ = cria_no("MethodDecl");
+																					add_filho($$, $3);
+																					add_next($3, $4);
+																				}
+    					;
+FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON	{$$ = NULL;}
+						|	error SEMICOLON										{$$ = NULL;}	
+						;
 CommaIDRepetition:			
-				|	CommaIDRepetition COMMA ID 
-				;	
-Type:				BOOL 											{$$ = NULL;}
-				| 	INT 											{$$ = NULL;}
-				| 	DOUBLE											{$$ = NULL;}
-				;
-MethodHeader: 		Type ID LPAR FormalParams RPAR					{$$ =NULL;}
-				|	Type ID LPAR RPAR
-				|	VOID ID LPAR FormalParams RPAR					{$$ =NULL;}
-				|	VOID ID LPAR RPAR								{$$ =NULL;}
-				;
-FormalParams: 		Type ID FormalParamsRepetition					
-				|	STRING LSQ RSQ ID
-				;
-FormalParamsRepetition:			
-				| 	FormalParamsRepetition COMMA Type ID
-				;
-MethodBody:				LBRACE MethodBodyRepetition RBRACE
-				;	
+						|	CommaIDRepetition COMMA ID 
+						;	
+Type:						BOOL 												{$$ = cria_no("Bool");}
+						| 	INT 												{$$ = cria_no("Int");}
+						| 	DOUBLE												{$$ = cria_no("Double");}
+						;
+MethodHeader: 				Type ID LPAR FormalParams RPAR						{
+																					$$ = cria_no("MethodHeader");
+																					add_filho($$, $1);
+																					aux = new_id($2);
+																					add_next($1, aux);
+																					add_next(aux, $4);
+																				}
+						|	Type ID LPAR RPAR									{
+																					$$ = cria_no("MethodHeader");
+																					add_filho($$, $1);
+																					add_next($1, new_id($2));
+																				}
+						|	VOID ID LPAR FormalParams RPAR						{
+																					$$ = cria_no("MethodHeader");
+																					aux = cria_no("Void");
+																					add_filho($$, aux);
+																					add_next(aux, $4);
+																				}
+						|	VOID ID LPAR RPAR									{
+																					$$ = cria_no("MethodHeader");
+																					add_filho($$, cria_no("Void"));
+																					add_filho($$, new_id($2));
+																				}
+						;
+FormalParams: 				Type ID FormalParamsRepetition						{
+																					$$ = cria_no("MethodParams");
+																					add_filho($$, $1);
+																					aux = new_id($2);
+																					add_next($1, aux);
+																					add_next(aux, $3);
+																				}				
+						|	STRING LSQ RSQ ID									{
+																					$$ = cria_no("MethodParams");
+																					add_filho($$, cria_no("StringArray"));
+																					add_filho($$, new_id($4));
+																				}
+						;
+FormalParamsRepetition:															{$$ = NULL;}
+						| 	FormalParamsRepetition COMMA Type ID				{	
+																					$$ = $1;
+																					add_next($1, $3);
+																					add_next($3, new_id($4));
+																				}
+						;
+MethodBody:					LBRACE MethodBodyRepetition RBRACE					{	
+																					$$ = cria_no("MethodBody");
+																					add_next($$, $2);
+																				}
+						;	
 MethodBodyRepetition:			
-				|	MethodBodyRepetition Statement
-				|	MethodBodyRepetition VarDecl
-				;
-VarDecl:				Type ID CommaIDRepetition SEMICOLON
-				;
-Statement:				LBRACE StatementRepetition RBRACE
-				|	IF LPAR Expr RPAR Statement %prec IF
-				|	IF LPAR Expr RPAR Statement ELSE Statement
-				|	WHILE LPAR Expr RPAR Statement
-				|	RETURN Expr SEMICOLON
-				|	RETURN SEMICOLON		
-				|  	SEMICOLON
-				|	MethodInvocation SEMICOLON
-				|	Assignment SEMICOLON
-				|   	ParseArgs SEMICOLON
-				|	PRINT LPAR Expr RPAR SEMICOLON
-				|	PRINT LPAR STRLIT RPAR SEMICOLON
-				|	error SEMICOLON
-				;
+						|	MethodBodyRepetition Statement						{	
+																					$$ = cria_no("MethodBody");
+																					add_next($$, $2);
+																				}
+						|	MethodBodyRepetition VarDecl
+						;
+VarDecl:					Type ID CommaIDRepetition SEMICOLON
+						;
+Statement:					LBRACE StatementRepetition RBRACE
+						|	IF LPAR Expr RPAR Statement %prec IF
+						|	IF LPAR Expr RPAR Statement ELSE Statement
+						|	WHILE LPAR Expr RPAR Statement
+						|	RETURN Expr SEMICOLON
+						|	RETURN SEMICOLON		
+						|  	SEMICOLON
+						|	MethodInvocation SEMICOLON
+						|	Assignment SEMICOLON
+						|   	ParseArgs SEMICOLON
+						|	PRINT LPAR Expr RPAR SEMICOLON
+						|	PRINT LPAR STRLIT RPAR SEMICOLON
+						|	error SEMICOLON
+						;
 StatementRepetition:			
-				|	StatementRepetition Statement				
-				;
+						|	StatementRepetition Statement				
+						;
 MethodInvocation: 			ID LPAR Expr CommaExprRepetition RPAR
-				|	ID LPAR  RPAR
-				|	ID LPAR error RPAR
-				;
+						|	ID LPAR  RPAR
+						|	ID LPAR error RPAR
+						;
 CommaExprRepetition:			
-				|	CommaExprRepetition COMMA Expr
-				;
-Assignment:				ID ASSIGN Expr
-				;
-ParseArgs:				PARSEINT LPAR ID LSQ Expr RSQ RPAR
-				|	PARSEINT LPAR error RPAR
-				;
-Expr:				Expr PLUS Expr
-				|	Expr MINUS Expr
-				|	Expr STAR Expr
-				|	Expr DIV Expr
-				|	Expr MOD Expr
-				|	Expr AND Expr
-				|	Expr OR  Expr
-				|	Expr XOR Expr
-				|	Expr LSHIFT Expr
-				|	Expr RSHIFT Expr
-				|	Expr EQ Expr
-				|	Expr GE Expr
-				|	Expr GT Expr
-				|	Expr LE Expr
-				|	Expr LT Expr
-				|	Expr NE Expr
-				|	MINUS Expr
-				|	NOT Expr
-				|	PLUS Expr
-				|	LPAR Expr RPAR
-				|	MethodInvocation 
-				|	Assignment 
-				|	ParseArgs
-				|	ID DOTLENGTH
-				|	ID 									
-				|	INTLIT
-				|  	REALLIT 
-				|  	BOOLLIT
-				| 	LPAR error RPAR
-				;
+						|	CommaExprRepetition COMMA Expr
+						;
+Assignment:					ID ASSIGN Expr
+						;
+ParseArgs:					PARSEINT LPAR ID LSQ Expr RSQ RPAR
+						|	PARSEINT LPAR error RPAR
+						;
+Expr:						Expr PLUS Expr
+						|	Expr MINUS Expr
+						|	Expr STAR Expr
+						|	Expr DIV Expr
+						|	Expr MOD Expr
+						|	Expr AND Expr
+						|	Expr OR  Expr
+						|	Expr XOR Expr
+						|	Expr LSHIFT Expr
+						|	Expr RSHIFT Expr
+						|	Expr EQ Expr
+						|	Expr GE Expr
+						|	Expr GT Expr
+						|	Expr LE Expr
+						|	Expr LT Expr
+						|	Expr NE Expr
+						|	MINUS Expr
+						|	NOT Expr
+						|	PLUS Expr
+						|	LPAR Expr RPAR
+						|	MethodInvocation 
+						|	Assignment 
+						|	ParseArgs
+						|	ID DOTLENGTH
+						|	ID 									
+						|	INTLIT
+						|  	REALLIT 
+						|  	BOOLLIT
+						| 	LPAR error RPAR
+						;
 
 
 %%
