@@ -34,7 +34,7 @@ struct no* par;
 	struct no* no;
 }
 
-%type <no> Program Type MethodHeader MethodDecl ProgramRepetition
+%type <no> Program Type MethodHeader MethodDecl ProgramRepetition FieldDecl
 %type <str> ID INTLIT REALLIT STRLIT
 
 
@@ -105,47 +105,39 @@ struct no* par;
 
 Program: 			CLASS ID LBRACE ProgramRepetition RBRACE		{	
 																		tree = cria_no("Program");
-																		add_filho(tree, $4);
-																	}
+																		aux = new_id($2);
+																		add_filho(tree, aux);
+																		add_next(aux, $4);
+																	}													
 				;
 ProgramRepetition:													{$$ = NULL;}							
-				|	ProgramRepetition MethodDecl 					{add_next($1, $2); $$ = $1;}	
+				|	ProgramRepetition MethodDecl 					{add_next($1, $2); $$ = $1;}
 				|	ProgramRepetition FieldDecl 					{add_next($1, $2); $$ = $1;}
 				|	ProgramRepetition SEMICOLON						{$$ = $1;}
 				;
 MethodDecl: 		PUBLIC STATIC MethodHeader MethodBody			{	
 																		aux = cria_no("MethodDecl");
+																		add_next(tree, aux);
 																		header = cria_no("MethodHeader");
 																		add_filho(aux, header);
 																		add_filho(header, $3);
-                                                                        body = cria_no("MethodBody");
-                                                                        add_filho(aux, body);
-																		add_filho(body, $4);
                                                                         $$ = aux;
 																	}
     				;
-FieldDecl: 			PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
-				|	error SEMICOLON										
+FieldDecl: 			PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON {$$ = NULL;}
+				|	error SEMICOLON									{$$ = NULL;}	
 				;
 CommaIDRepetition:			
 				|	CommaIDRepetition COMMA ID 
 				;	
-Type:				BOOL 											{$$ = cria_no("Bool");}
-				| 	INT 											{$$ = cria_no("Int");}
-				| 	DOUBLE											{$$ = cria_no("Double");}
+Type:				BOOL 											{$$ = NULL;}
+				| 	INT 											{$$ = NULL;}
+				| 	DOUBLE											{$$ = NULL;}
 				;
-MethodHeader: 		Type ID LPAR FormalParams RPAR					{	
-																		add_filho(header, $1);
-																		header = NULL;
-																		aux = new_id(%2);
-																		add_next($1, aux);
-                                                                        par = cria_no("MethodParams");
-                                                                        add_next(aux, par);
-                                                                        $$ = aux;
-																	}
+MethodHeader: 		Type ID LPAR FormalParams RPAR					{$$ =NULL;}
 				|	Type ID LPAR RPAR
-				|	VOID ID LPAR FormalParams RPAR
-				|	VOID ID LPAR RPAR
+				|	VOID ID LPAR FormalParams RPAR					{$$ =NULL;}
+				|	VOID ID LPAR RPAR								{$$ =NULL;}
 				;
 FormalParams: 		Type ID FormalParamsRepetition					
 				|	STRING LSQ RSQ ID
