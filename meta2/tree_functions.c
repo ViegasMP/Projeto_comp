@@ -12,7 +12,7 @@ typedef struct no{
 */
 
 No* cria_no(char* nome){
-	printf("Criando no %s\n", nome);
+	//printf("Criando no %s\n", nome);
 	No* n = (No *) malloc(sizeof(No));
 	n->nome = nome;
 	n->filho = NULL;
@@ -28,6 +28,7 @@ void add_next(No* n1, No* n2){
 		aux = aux->next;
 	}
 	aux->next = n2;
+	printf("Add %s em %s\n", n2->nome, n1->nome);
 }
 
 void add_filho(No* n, No* filho){
@@ -42,6 +43,7 @@ void add_filho(No* n, No* filho){
     } else {
         aux->filho = filho;
     }
+	printf("Add %s em %s\n", filho->nome, n->nome);
 }
 
 No* new_id(const char* nome){
