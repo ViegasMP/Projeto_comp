@@ -2,488 +2,209 @@
 /*
 		Carolina de Castilho Godinho	-	2017247087
 		Maria Paula de Alencar Viegas	-	2017125592
+		Correr com:
+		lex jucompiler.l
+		yacc -d jucompiler.y
+		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c
 */
 %}
 %{
+#include <stdio.h>
 #include <stdbool.h> 
-#include "y.tab.h"
-int yyparse(void);
-bool l;
-bool e2;
-int line_count=1;
-int col_count=1;
-int ini_line=1; //guarda linha em que começa comentario ou string
-int ini_col=1; //guarda coluna em que começa comentario ou string
-int col_escape=0;
-int error_flag=0;
-int col_syntax = 1;
+int yylex(void);
+void yyerror (char *s);
+extern char* yytext;
+extern int line_count;
+extern int col_count;
+extern int ini_line; //guarda linha em que começa comentario ou string
+extern int ini_col; //guarda coluna em que começa comentario ou string
+extern bool e2;
+extern int col_syntax;
 %}
 
+%union{
+	char * str;
+	struct no* no;
+}
 
-alfabeto												[a-zA-Z]
-numero													[0-9]
-simbolo            											$|_
-exponencial												E|e
-mais_ou_menos												+|-
-whitespace  												" "|\t|\f
-chars													\\(f|n|r|t|\\|\")|[^"\n""\r""\"""\\"]
-reserved												"++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"
-next_line												\n|\r|(\r\n)  
 
-%X COMMENT
-%X COMMENT2
-%X STR
-%X ESCAPE
+%token STRLIT
+%token RESERVED
+%token REALLIT
+%token INTLIT
+%token BOOLLIT
+%token AND
+%token ASSIGN
+%token STAR
+%token COMMA
+%token DIV
+%token EQ
+%token GE
+%token GT
+%token LBRACE
+%token LE
+%token LPAR
+%token LSQ
+%token LT
+%token MINUS
+%token MOD
+%token NE
+%token NOT
+%token OR
+%token PLUS
+%token RBRACE
+%token RPAR
+%token RSQ
+%token SEMICOLON
+%token ARROW
+%token LSHIFT
+%token RSHIFT
+%token XOR
+%token BOOL
+%token CLASS
+%token DOTLENGTH
+%token DOUBLE
+%token ELSE
+%token IF
+%token INT
+%token PRINT
+%token PARSEINT
+%token PUBLIC
+%token RETURN
+%token STATIC
+%token STRING
+%token VOID
+%token WHILE
+%token ID
+
+%right ASSIGN
+%left OR 
+%left AND
+%left XOR
+%left EQ NE
+%left LT LE GT GE
+%left LSHIFT RSHIFT
+%left PLUS MINUS
+%left STAR DIV MOD
+%right NOT
+
+%nonassoc IF
+%nonassoc ELSE
+
+%%
+
+Program: 					CLASS ID LBRACE ProgramRepetition RBRACE													
+						;
+ProgramRepetition:											
+						|	ProgramRepetition MethodDecl 				
+						|	ProgramRepetition FieldDecl 				
+						|	ProgramRepetition SEMICOLON				
+						;
+MethodDecl: 					PUBLIC STATIC MethodHeader MethodBody				
+    						;
+FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON		
+						|	error SEMICOLON							
+						;
+CommaIDRepetition:										
+						|	CommaIDRepetition COMMA ID 				
+						;	
+Type:						BOOL 								
+						| 	INT 							
+						| 	DOUBLE							
+						;
+MethodHeader: 					Type ID LPAR FormalParams RPAR					
+						|	Type ID LPAR RPAR					
+						|	VOID ID LPAR FormalParams RPAR				
+						|	VOID ID LPAR RPAR					
+						;
+FormalParams: 					Type ID FormalParamsRepetition									
+						|	STRING LSQ RSQ ID					
+						;
+FormalParamsRepetition:				
+						| 	FormalParamsRepetition COMMA Type ID			
+						;
+MethodBody:					LBRACE MethodBodyRepetition RBRACE				
+						;	
+MethodBodyRepetition:				
+						|	MethodBodyRepetition Statement				
+						|	MethodBodyRepetition VarDecl				
+						;
+VarDecl:					Type ID CommaIDRepetition SEMICOLON				
+						;
+Statement:					LBRACE StatementRepetition RBRACE					
+						|	IF LPAR Expr RPAR Statement %prec IF				
+						|	IF LPAR Expr RPAR Statement ELSE Statement
+						|	WHILE LPAR Expr RPAR Statement						
+						|	RETURN Expr SEMICOLON								
+						|	RETURN SEMICOLON									
+						|  	SEMICOLON											
+						|	MethodInvocation SEMICOLON								
+						|	Assignment SEMICOLON								
+						|   ParseArgs SEMICOLON									
+						|	PRINT LPAR Expr RPAR SEMICOLON						
+						|	PRINT LPAR STRLIT RPAR SEMICOLON					
+						|	error SEMICOLON										
+						;
+StatementRepetition:				
+						|	StatementRepetition Statement						
+						;
+MethodInvocation: 				ID LPAR Expr CommaExprRepetition RPAR				
+						|	ID LPAR RPAR										
+						|	ID LPAR error RPAR									
+						;
+CommaExprRepetition:				
+						|	CommaExprRepetition COMMA Expr						
+						;
+Assignment:					ID ASSIGN Expr										
+						;
+ParseArgs:					PARSEINT LPAR ID LSQ Expr RSQ RPAR
+						|	PARSEINT LPAR error RPAR							
+						;
+Expr:							Expr1
+						| 	Assignment
+						;
+Expr1:						Expr1 PLUS Expr1
+						|	Expr1 MINUS Expr1										
+						|	Expr1 STAR Expr1										
+						|	Expr1 DIV Expr1										
+						|	Expr1 MOD Expr1										
+						|	Expr1 AND Expr1										
+						|	Expr1 OR  Expr1										
+						|	Expr1 XOR Expr1										
+						|	Expr1 LSHIFT Expr1									
+						|	Expr1 RSHIFT Expr1
+						|	Expr1 EQ Expr1
+						|	Expr1 GE Expr1										
+						|	Expr1 GT Expr1										
+						|	Expr1 LE Expr1
+						|	Expr1 LT Expr1										
+						|	Expr1 NE Expr1																	
+						|	MINUS Expr1 %prec NOT													
+						|	NOT Expr1														
+						|	PLUS Expr1 %prec NOT													
+						|	LPAR Expr RPAR									
+						|	MethodInvocation 								
+						|	ParseArgs									
+						|	ID DOTLENGTH									
+						|	ID 													
+						|	INTLIT										
+						|  	REALLIT 									
+						|  	BOOLLIT										
+						| 	LPAR error RPAR									
+						;
+
 
 %%
 
-"//"															{
-																BEGIN COMMENT2;
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-															}
-<COMMENT2>{next_line}													{
-																BEGIN 0;line_count++;
-																col_syntax=col_count;
-																col_count=1;
-															} //regressar ao normal
-<COMMENT2>.	  													{
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-															} //ignorar
+void yyerror ( char *s) {
+	if(e2){
+		if(yychar==STRLIT){
+			printf("Line %d, col %d: %s: \"%s\n",ini_line,ini_col,s,yylval.str);
 
-"/*" 															{
-																BEGIN COMMENT;
-																ini_line=line_count;
-																ini_col = col_count;
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-															}
-<COMMENT>"*/" 														{
-																BEGIN 0;
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-															} //regressar ao normal
-<COMMENT><<EOF>>													{
-																printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);
-																return 0;
-															} //regressar ao normal
-<COMMENT>{next_line}  													{
-																line_count++;
-																col_count=1;
-															} //ignorar
-<COMMENT>.	  													{
-																col_count=col_count+yyleng;
-																col_syntax=col_count;
-															} //ignorar
-\"															{
-																BEGIN STR;
-																ini_line=line_count;
-																ini_col = col_count;
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-															}
-<STR>{chars}*\\														{
-																BEGIN ESCAPE;
-																col_count=col_count+yyleng;
-																col_syntax=col_count;
-																col_escape=col_count-1;
-															}
-<ESCAPE>{next_line}													{
-																printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);
-																printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
-																BEGIN 0;line_count++;
-																col_count=1;
-															}
-<ESCAPE>[^fnrt\\\"]													{
-																BEGIN STR; 
-																printf("Line %d, col %d: invalid escape sequence (\\%s)\n",ini_line,col_escape,yytext);
-																col_count=col_count+yyleng;
-																error_flag=1;
-															}
-
-<STR>{chars}*\"														{
-																if(!error_flag){
-																	if(l) printf("STRLIT(\"%s)\n",yytext);
-																}
-																col_count=col_count+yyleng;
-																error_flag=0;
-																BEGIN 0;
-																if(!error_flag){
-																	if(!l){
-																		yylval.str=strdup(yytext);
-																		return STRLIT;
-																	}
-																}
-															}
-<STR><<EOF>>														{
-																printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
-																line_count--;
-																BEGIN 0;
-															}
-<STR>{next_line}													{
-																printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
-																BEGIN 0;
-																line_count++;
-																col_syntax=col_count;
-																col_count=1;
-																error_flag=0;
-															}
-<STR>({chars}|" "|"\t")*												{
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-															}						
-{reserved}														{
-																if(l)printf("RESERVED(%s)\n",yytext);
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-																if(!l){
-																	yylval.str=strdup(yytext);
-																	return RESERVED;
-																}
-															}
-({numero}+("_"*{numero}+)*"."({numero}+("_"*{numero}+)*)?({exponencial}[+-]?{numero}+("_"*{numero}+)*)?)|({numero}+("_"*{numero}+)*)({exponencial}[+-]?{numero}+("_"*{numero}+)*)|"."{numero}+("_"*{numero}+)*({exponencial}[+-]?{numero}+("_"*{numero}+)*)?						{
-																																						if(l)printf("REALLIT(%s)\n",yytext);
-																																						col_syntax=col_count;
-																																						col_count=col_count+yyleng;
-																																						if(!l){
-																																							yylval.str=strdup(yytext);
-																																							return REALLIT;
-																																						}
-																																					}
-([1-9]+(({numero}|"_")*{numero}+)*)|"0"							{
-												if(l)printf("INTLIT(%s)\n",yytext);
-												col_syntax=col_count;
-												col_count=col_count+yyleng;
-												if(!l){
-													yylval.str=strdup(yytext);
-													return INTLIT;
-												}
-											}
-"true"|"false"										{
-												if(l)printf("BOOLLIT(%s)\n",yytext);
-												col_syntax=col_count;
-												col_count=col_count+yyleng;
-												if(!l)return BOOLLIT;
-											}
-"&&"											{
-												if(l)printf("AND\n");
-												col_syntax=col_count;
-												col_count=col_count+yyleng; 
-												if(!l)return AND;
-											}
-"="											{
-												if(l)printf("ASSIGN\n");
-												col_syntax=col_count;
-												col_count=col_count+yyleng; 
-												if(!l)return ASSIGN;
-											}
-"*"											{
-												if(l)printf("STAR\n");
-												col_syntax=col_count;
-												col_count=col_count+yyleng; 
-												if(!l)return STAR;
-											}
-","											{
-												if(l)printf("COMMA\n");
-												col_syntax=col_count;
-												col_count=col_count+yyleng;
-												if(!l)return COMMA;
-											}
-"/"											{
-												if(l)printf("DIV\n");
-												col_syntax=col_count;
-												col_count=col_count+yyleng;
-												if(!l)return DIV;
-											}
-"=="													{
-															if(l)printf("EQ\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return EQ;
-														}	
-">="													{
-															if(l)printf("GE\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return GE;
-														}
-">"														{
-															if(l)printf("GT\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return GT;
-														}
-"{"													{
-														if(l)printf("LBRACE\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng;
-														if(!l)return LBRACE;
-													}
-"<="												{
-														if(l)printf("LE\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng;
-														if(!l)return LE;
-													}
-"("													{
-														if(l)printf("LPAR\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng;
-														if(!l)return LPAR;
-													}
-"["													{
-														if(l)printf("LSQ\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng;
-														if(!l)return LSQ;
-													}
-"<"													{
-														if(l)printf("LT\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return LT;
-													}
-"-"													{
-														if(l)printf("MINUS\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng;
-														if(!l)return MINUS;
-													}
-"%"													{
-														if(l)printf("MOD\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return MOD;
-													}
-"!="													{
-															if(l)printf("NE\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return NE;
-														}
-"!"													{
-														if(l)printf("NOT\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return NOT;
-													}
-"||"													{
-															if(l)printf("OR\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return OR;
-															}
-"+"													{
-														if(l)printf("PLUS\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return PLUS;
-														}
-"}"													{
-														if(l)printf("RBRACE\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return RBRACE;
-														}
-")"													{
-														if(l)printf("RPAR\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return RPAR;
-														}
-"]"													{
-														if(l)printf("RSQ\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return RSQ;
-													}
-";"													{
-														if(l)printf("SEMICOLON\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return SEMICOLON;
-													}
-"->"													{
-															if(l)printf("ARROW\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return ARROW;
-														}
-"<<"													{
-															if(l)printf("LSHIFT\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return LSHIFT;
-														}
-">>"													{
-															if(l)printf("RSHIFT\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return RSHIFT;
-														}
-"^"													{
-														if(l)printf("XOR\n");
-														col_syntax=col_count;
-														col_count=col_count+yyleng; 
-														if(!l)return XOR;
-													}
-"boolean"												{
-															if(l)printf("BOOL\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return BOOL;
-														}
-"class"													{
-															if(l)printf("CLASS\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return CLASS;
-														}
-".length"												{
-															if(l)printf("DOTLENGTH\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return DOTLENGTH;
-														}
-"double"												{
-															if(l)printf("DOUBLE\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return DOUBLE;
-														}
-"else"													{
-															if(l)printf("ELSE\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return ELSE;
-														}
-"if"														{
-																if(l)printf("IF\n");
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-																if(!l)return IF;
-															}
-"int"														{
-																if(l)printf("INT\n");
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-																if(!l)return INT;
-															}
-"System.out.print"											{
-																if(l)printf("PRINT\n");
-																col_syntax=col_count;
-																col_count=col_count+yyleng; 
-																if(!l)return PRINT;
-															}
-"Integer.parseInt"											{
-																if(l)printf("PARSEINT\n");
-																col_syntax=col_count;
-																col_count=col_count+yyleng;
-																return PARSEINT;
-															}
-"public"												{
-															if(l)printf("PUBLIC\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return PUBLIC;
-														}
-"return"												{
-															if(l)printf("RETURN\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return RETURN;
-														}
-"static"												{
-															if(l)printf("STATIC\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng; 
-															if(!l)return STATIC;
-														}
-"String"												{
-															if(l)printf("STRING\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return STRING;
-														}
-"void"													{
-															if(l)printf("VOID\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return VOID;
-														}
-"while"													{
-															if(l)printf("WHILE\n");
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-															if(!l)return WHILE;
-														}
-({alfabeto}|{simbolo})+({numero}|{alfabeto}|{simbolo})* 						{
-																					if(l)printf("ID(%s)\n",yytext);
-																					col_syntax=col_count;
-																					col_count=col_count+yyleng;
-																					if(!l){
-																						yylval.str=strdup(yytext);
-																						return ID;
-																					}
-																				}
-{whitespace}           									{
-															col_syntax=col_count;
-															col_count+=yyleng;
-														}
-{next_line}												{
-															line_count++;col_count=1;
-														}
-.														{
-															printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);
-															col_syntax=col_count;
-															col_count=col_count+yyleng;
-														}
-<<EOF>>													{
-															col_syntax=col_count;
-															return 0;
-														}
-
-
-
-%%
-int main(int argc, char **argv) {
-	if(argc == 2){
-		if (strcmp(argv[1],"-l") == 0){
-			l = true;
-			e2 = false;
-			yylex();
-		}
-		else if (strcmp(argv[1],"-e1") == 0){
-			l = false;
-			e2 = false;
-			yylex();
-		}
-		else if(strcmp(argv[1],"-e2") == 0){
-			l = false;
-			e2 = true;
-			yyparse();
-		}
-		else if	(strcmp(argv[1], "-t") == 0){
-			e2 = true;
-			yyparse();
-			//print_tree(tree,0);
 		}
 		else{
-			return 0;
+			printf("Line %d, col %d: %s: %s\n",line_count,col_syntax,s,yytext);
 		}
 	}
-	else if (argc == 1){
-		l = false;
-		e2 = true;
-		yyparse();
-	}
+}
 
-	else{
-		return 0;
-	}
-	return 0;
-}
-int yywrap() {
-	return 1;
-}
