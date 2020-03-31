@@ -17,7 +17,7 @@ No* cria_no(char* nome){
 	n->nome = nome;
 	n->filho = NULL;
 	n->next = NULL;
-	//printf("Criado no %s\n", n->nome);
+	printf("Criado no %s\n", n->nome);
 	return n;
 }
 
@@ -25,10 +25,11 @@ void add_next(No* n1, No* n2){
 	if (n1 == NULL || n2 == NULL) return;
 	No* aux = n1;
 	while (aux->next != NULL){
+        printf("aux = %s\n", aux->nome);
 		aux = aux->next;
 	}
 	aux->next = n2;
-	//printf("Add %s em %s\n", n2->nome, n1->nome);
+	printf("Add %s em %s\n", n2->nome, aux->nome);
 }
 
 void add_filho(No* n, No* filho){
@@ -37,13 +38,14 @@ void add_filho(No* n, No* filho){
 	if(aux->filho != NULL){
         aux = aux->filho;
         while(aux->filho != NULL) {
+            printf("aux = %s\n", aux->nome);
             aux = aux->filho;
         }
         aux->next = filho;
     } else {
         aux->filho = filho;
     }
-	//printf("Add %s em %s\n", filho->nome, n->nome);
+	printf("Add %s em %s\n", filho->nome, aux->nome);
 }
 
 No* new_id(char* nome){
@@ -70,27 +72,21 @@ No* new_intlit(char* nome){
 	return cria_no(arr);
 }
 
-No* new_boollit(char* nome){
+No* new_boollit(const char* nome){
 	char* arr = (char *) malloc(strlen(nome) + 5);
 	sprintf(arr, "BoolLit(%s)", nome);
 	return cria_no(arr);
 }
 
 void print_tree(No* n, int nivel) {
-	int i;
-	struct no* temp = n;
-	for(i = 0; i < nivel; i++){
-		printf("..");
-	}
-	printf("%s", n->nome);
-	printf("\n");   
-	if(temp->filho != NULL) {
-		print_tree(temp->filho, nivel);
-	}
-	if(temp->next != NULL) {
-		print_tree(temp->next, nivel);
-	}
-}
+     if (n == NULL) return;
+ 	for (int i = 0; i < nivel; i++) printf("..");
+ 	printf("%s\n", n->nome);
+ 	//mostrar filhos
+ 	print_tree(n->filho, nivel+1);
+ 	//mostrar irmaos
+ 	print_tree(n->next, nivel);
+ }
 
 void free_tree(No* n){
 	if (n == NULL) return;

@@ -24,9 +24,10 @@ extern int col_syntax;
 struct no* tree;
 struct no* aux;
 struct no* type;
-struct no* header;
+struct no* dcl;
 struct no* body;
 struct no* par;
+struct no* assign;
 %}
 
 %union{
@@ -116,9 +117,10 @@ ProgramRepetition:																{$$ = NULL;}
 						|	ProgramRepetition SEMICOLON							{$$ = $1;}
 						;
 MethodDecl: 				PUBLIC STATIC MethodHeader MethodBody				{	
-																					$$ = cria_no("MethodDecl");
-																					add_filho($$, $3);
+																					dcl = cria_no("MethodDecl");
+																					add_filho(dcl, $3);
 																					add_next($3, $4);
+																					$$ = dcl;																
 																				}
     					;
 FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON	{$$ = NULL;}
@@ -149,8 +151,10 @@ MethodHeader: 				Type ID LPAR FormalParams RPAR						{
 						|	VOID ID LPAR FormalParams RPAR						{
 																					$$ = cria_no("MethodHeader");
 																					aux = cria_no("Void");
+																					type = new_id($2);
 																					add_filho($$, aux);
-																					add_next(aux, $4);
+																					add_next(aux, type);
+																					add_next(type, $4);
 																				}
 						|	VOID ID LPAR RPAR									{
 																					$$ = cria_no("MethodHeader");
@@ -249,19 +253,28 @@ StatementRepetition:															{$$ = NULL;}
 						|	StatementRepetition Statement						{$$ = $2;}
 						;
 MethodInvocation: 			ID LPAR Expr CommaExprRepetition RPAR				{
-																					$$ = new_id($1);
-																					add_next($$, $3);
+																					$$ = cria_no("Call");
+																					aux = new_id($1);
+																					add_filho($$, aux);
+																					add_next(aux, $3);
 																					add_next($3, $4);
 																				}
-						|	ID LPAR RPAR										{$$ = new_id($1);}
+						|	ID LPAR RPAR										{
+                                                                        			aux = cria_no("Call");
+                                                                        			add_filho(aux, new_id($1));
+                                                                        			$$ = aux;
+                                                                    			}
 						|	ID LPAR error RPAR									{$$ = NULL;}
 						;
 CommaExprRepetition:															{$$ = NULL;}
 						|	CommaExprRepetition COMMA Expr						{$$ = $3;}
 						;
 Assignment:					ID ASSIGN Expr										{
-																					$$ = new_id($1);
-																					add_next($$, $3);
+																					assign = cria_no("Assign");
+																					aux = new_id($1);
+																					add_filho(assign, aux);
+																					add_filho(assign, $3);
+																					$$ = assign;
 																				}
 						;
 ParseArgs:					PARSEINT LPAR ID LSQ Expr RSQ RPAR					{
