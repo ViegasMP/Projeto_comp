@@ -11,7 +11,6 @@
 %{
 #include <stdio.h>
 #include <stdbool.h> 
-#include "tree_functions.h"
 int yylex(void);
 void yyerror (char *s);
 extern char* yytext;
@@ -21,23 +20,11 @@ extern int ini_line; //guarda linha em que começa comentario ou string
 extern int ini_col; //guarda coluna em que começa comentario ou string
 extern bool e2;
 extern int col_syntax;
-struct no* tree;
-struct no* aux;
-struct no* type;
-struct no* dcl;
-struct no* body;
-struct no* par;
-struct no* assign;
 %}
 
 %union{
 	char * str;
-	struct no* no;
 }
-
-%type <no> Program MethodHeader MethodDecl ProgramRepetition FieldDecl MethodBody Type FormalParamsRepetition FormalParams CommaIDRepetition MethodBodyRepetition Statement VarDecl StatementRepetition Expr MethodInvocation Assignment ParseArgs CommaExprRepetition
-%type <str> ID INTLIT REALLIT STRLIT BOOLLIT
-
 
 %token STRLIT
 %token RESERVED
@@ -104,45 +91,26 @@ struct no* assign;
 
 %%
 
-Program: 					CLASS ID LBRACE ProgramRepetition RBRACE			{	
-																					tree = cria_no("Program");
-																					aux = new_id($2);
-																					add_filho(tree, aux);
-																					add_next(aux, $4);
-																				}													
+Program: 					CLASS ID LBRACE ProgramRepetition RBRACE
 						;
 ProgramRepetition:																{$$ = NULL;}							
 						|	ProgramRepetition MethodDecl 						{$$ = $2;}
 						|	ProgramRepetition FieldDecl 						{$$ = $2;}
 						|	ProgramRepetition SEMICOLON							{$$ = $1;}
 						;
-MethodDecl: 				PUBLIC STATIC MethodHeader MethodBody				{	
-																					dcl = cria_no("MethodDecl");
-																					add_filho(dcl, $3);
-																					add_next($3, $4);
-																					$$ = dcl;																
-																				}
+MethodDecl: 				PUBLIC STATIC MethodHeader MethodBod
     					;
-FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON	{$$ = NULL;}
-						|	error SEMICOLON										{$$ = NULL;}	
+FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
+						|	error SEMICOLON									
 						;
-CommaIDRepetition:																{$$ = NULL;}						
-						|	CommaIDRepetition COMMA ID 							{
-																					$$ = $1;
-																					add_next($1, new_id($3));
-																				}
+CommaIDRepetition:																					
+						|	CommaIDRepetition COMMA ID 							
 						;	
-Type:						BOOL 												{$$ = cria_no("Bool");}
-						| 	INT 												{$$ = cria_no("Int");}
-						| 	DOUBLE												{$$ = cria_no("Double");}
+Type:						BOOL 												
+						| 	INT 												
+						| 	DOUBLE												
 						;
-MethodHeader: 				Type ID LPAR FormalParams RPAR						{
-																					$$ = cria_no("MethodHeader");
-																					add_filho($$, $1);
-																					aux = new_id($2);
-																					add_next($1, aux);
-																					add_next(aux, $4);
-																				}
+MethodHeader: 				Type ID LPAR FormalParams RPAR						
 						|	Type ID LPAR RPAR									{
 																					$$ = cria_no("MethodHeader");
 																					add_filho($$, $1);
