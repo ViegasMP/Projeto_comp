@@ -2,390 +2,488 @@
 /*
 		Carolina de Castilho Godinho	-	2017247087
 		Maria Paula de Alencar Viegas	-	2017125592
-		Correr com:
-		lex jucompiler.l
-		yacc -d jucompiler.y
-		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c
 */
 %}
 %{
-#include <stdio.h>
 #include <stdbool.h> 
-int yylex(void);
-void yyerror (char *s);
-extern char* yytext;
-extern int line_count;
-extern int col_count;
-extern int ini_line; //guarda linha em que começa comentario ou string
-extern int ini_col; //guarda coluna em que começa comentario ou string
-extern bool e2;
-extern int col_syntax;
+#include "y.tab.h"
+int yyparse(void);
+bool l;
+bool e2;
+int line_count=1;
+int col_count=1;
+int ini_line=1; //guarda linha em que começa comentario ou string
+int ini_col=1; //guarda coluna em que começa comentario ou string
+int col_escape=0;
+int error_flag=0;
+int col_syntax = 1;
 %}
 
-%union{
-	char * str;
-}
 
-%token STRLIT
-%token RESERVED
-%token REALLIT
-%token INTLIT
-%token BOOLLIT
-%token AND
-%token ASSIGN
-%token STAR
-%token COMMA
-%token DIV
-%token EQ
-%token GE
-%token GT
-%token LBRACE
-%token LE
-%token LPAR
-%token LSQ
-%token LT
-%token MINUS
-%token MOD
-%token NE
-%token NOT
-%token OR
-%token PLUS
-%token RBRACE
-%token RPAR
-%token RSQ
-%token SEMICOLON
-%token ARROW
-%token LSHIFT
-%token RSHIFT
-%token XOR
-%token BOOL
-%token CLASS
-%token DOTLENGTH
-%token DOUBLE
-%token ELSE
-%token IF
-%token INT
-%token PRINT
-%token PARSEINT
-%token PUBLIC
-%token RETURN
-%token STATIC
-%token STRING
-%token VOID
-%token WHILE
-%token ID
+alfabeto												[a-zA-Z]
+numero													[0-9]
+simbolo            											$|_
+exponencial												E|e
+mais_ou_menos												+|-
+whitespace  												" "|\t|\f
+chars													\\(f|n|r|t|\\|\")|[^"\n""\r""\"""\\"]
+reserved												"++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"
+next_line												\n|\r|(\r\n)  
 
-%right ASSIGN
-%left OR 
-%left AND
-%left XOR
-%left EQ NE
-%left LT LE GT GE
-%left LSHIFT RSHIFT
-%left PLUS MINUS
-%left STAR DIV MOD
-%right NOT
-
-%nonassoc IF
-%nonassoc ELSE
+%X COMMENT
+%X COMMENT2
+%X STR
+%X ESCAPE
 
 %%
 
-Program: 					CLASS ID LBRACE ProgramRepetition RBRACE
-						;
-ProgramRepetition:																{$$ = NULL;}							
-						|	ProgramRepetition MethodDecl 						{$$ = $2;}
-						|	ProgramRepetition FieldDecl 						{$$ = $2;}
-						|	ProgramRepetition SEMICOLON							{$$ = $1;}
-						;
-MethodDecl: 				PUBLIC STATIC MethodHeader MethodBod
-    					;
-FieldDecl: 					PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON
-						|	error SEMICOLON									
-						;
-CommaIDRepetition:																					
-						|	CommaIDRepetition COMMA ID 							
-						;	
-Type:						BOOL 												
-						| 	INT 												
-						| 	DOUBLE												
-						;
-MethodHeader: 				Type ID LPAR FormalParams RPAR						
-						|	Type ID LPAR RPAR									{
-																					$$ = cria_no("MethodHeader");
-																					add_filho($$, $1);
-																					add_next($1, new_id($2));
+"//"															{
+																BEGIN COMMENT2;
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+															}
+<COMMENT2>{next_line}													{
+																BEGIN 0;line_count++;
+																col_syntax=col_count;
+																col_count=1;
+															} //regressar ao normal
+<COMMENT2>.	  													{
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+															} //ignorar
+
+"/*" 															{
+																BEGIN COMMENT;
+																ini_line=line_count;
+																ini_col = col_count;
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+															}
+<COMMENT>"*/" 														{
+																BEGIN 0;
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+															} //regressar ao normal
+<COMMENT><<EOF>>													{
+																printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);
+																return 0;
+															} //regressar ao normal
+<COMMENT>{next_line}  													{
+																line_count++;
+																col_count=1;
+															} //ignorar
+<COMMENT>.	  													{
+																col_count=col_count+yyleng;
+																col_syntax=col_count;
+															} //ignorar
+\"															{
+																BEGIN STR;
+																ini_line=line_count;
+																ini_col = col_count;
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+															}
+<STR>{chars}*\\														{
+																BEGIN ESCAPE;
+																col_count=col_count+yyleng;
+																col_syntax=col_count;
+																col_escape=col_count-1;
+															}
+<ESCAPE>{next_line}													{
+																printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);
+																printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
+																BEGIN 0;line_count++;
+																col_count=1;
+															}
+<ESCAPE>[^fnrt\\\"]													{
+																BEGIN STR; 
+																printf("Line %d, col %d: invalid escape sequence (\\%s)\n",ini_line,col_escape,yytext);
+																col_count=col_count+yyleng;
+																error_flag=1;
+															}
+
+<STR>{chars}*\"														{
+																if(!error_flag){
+																	if(l) printf("STRLIT(\"%s)\n",yytext);
+																}
+																col_count=col_count+yyleng;
+																error_flag=0;
+																BEGIN 0;
+																if(!error_flag){
+																	if(!l){
+																		yylval.str=strdup(yytext);
+																		return STRLIT;
+																	}
+																}
+															}
+<STR><<EOF>>														{
+																printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
+																line_count--;
+																BEGIN 0;
+															}
+<STR>{next_line}													{
+																printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
+																BEGIN 0;
+																line_count++;
+																col_syntax=col_count;
+																col_count=1;
+																error_flag=0;
+															}
+<STR>({chars}|" "|"\t")*												{
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+															}						
+{reserved}														{
+																if(l)printf("RESERVED(%s)\n",yytext);
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+																if(!l){
+																	yylval.str=strdup(yytext);
+																	return RESERVED;
+																}
+															}
+({numero}+("_"*{numero}+)*"."({numero}+("_"*{numero}+)*)?({exponencial}[+-]?{numero}+("_"*{numero}+)*)?)|({numero}+("_"*{numero}+)*)({exponencial}[+-]?{numero}+("_"*{numero}+)*)|"."{numero}+("_"*{numero}+)*({exponencial}[+-]?{numero}+("_"*{numero}+)*)?						{
+																																						if(l)printf("REALLIT(%s)\n",yytext);
+																																						col_syntax=col_count;
+																																						col_count=col_count+yyleng;
+																																						if(!l){
+																																							yylval.str=strdup(yytext);
+																																							return REALLIT;
+																																						}
+																																					}
+([1-9]+(({numero}|"_")*{numero}+)*)|"0"							{
+												if(l)printf("INTLIT(%s)\n",yytext);
+												col_syntax=col_count;
+												col_count=col_count+yyleng;
+												if(!l){
+													yylval.str=strdup(yytext);
+													return INTLIT;
+												}
+											}
+"true"|"false"										{
+												if(l)printf("BOOLLIT(%s)\n",yytext);
+												col_syntax=col_count;
+												col_count=col_count+yyleng;
+												if(!l)return BOOLLIT;
+											}
+"&&"											{
+												if(l)printf("AND\n");
+												col_syntax=col_count;
+												col_count=col_count+yyleng; 
+												if(!l)return AND;
+											}
+"="											{
+												if(l)printf("ASSIGN\n");
+												col_syntax=col_count;
+												col_count=col_count+yyleng; 
+												if(!l)return ASSIGN;
+											}
+"*"											{
+												if(l)printf("STAR\n");
+												col_syntax=col_count;
+												col_count=col_count+yyleng; 
+												if(!l)return STAR;
+											}
+","											{
+												if(l)printf("COMMA\n");
+												col_syntax=col_count;
+												col_count=col_count+yyleng;
+												if(!l)return COMMA;
+											}
+"/"											{
+												if(l)printf("DIV\n");
+												col_syntax=col_count;
+												col_count=col_count+yyleng;
+												if(!l)return DIV;
+											}
+"=="													{
+															if(l)printf("EQ\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return EQ;
+														}	
+">="													{
+															if(l)printf("GE\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return GE;
+														}
+">"														{
+															if(l)printf("GT\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return GT;
+														}
+"{"													{
+														if(l)printf("LBRACE\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng;
+														if(!l)return LBRACE;
+													}
+"<="												{
+														if(l)printf("LE\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng;
+														if(!l)return LE;
+													}
+"("													{
+														if(l)printf("LPAR\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng;
+														if(!l)return LPAR;
+													}
+"["													{
+														if(l)printf("LSQ\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng;
+														if(!l)return LSQ;
+													}
+"<"													{
+														if(l)printf("LT\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return LT;
+													}
+"-"													{
+														if(l)printf("MINUS\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng;
+														if(!l)return MINUS;
+													}
+"%"													{
+														if(l)printf("MOD\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return MOD;
+													}
+"!="													{
+															if(l)printf("NE\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return NE;
+														}
+"!"													{
+														if(l)printf("NOT\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return NOT;
+													}
+"||"													{
+															if(l)printf("OR\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return OR;
+															}
+"+"													{
+														if(l)printf("PLUS\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return PLUS;
+														}
+"}"													{
+														if(l)printf("RBRACE\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return RBRACE;
+														}
+")"													{
+														if(l)printf("RPAR\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return RPAR;
+														}
+"]"													{
+														if(l)printf("RSQ\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return RSQ;
+													}
+";"													{
+														if(l)printf("SEMICOLON\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return SEMICOLON;
+													}
+"->"													{
+															if(l)printf("ARROW\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return ARROW;
+														}
+"<<"													{
+															if(l)printf("LSHIFT\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return LSHIFT;
+														}
+">>"													{
+															if(l)printf("RSHIFT\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return RSHIFT;
+														}
+"^"													{
+														if(l)printf("XOR\n");
+														col_syntax=col_count;
+														col_count=col_count+yyleng; 
+														if(!l)return XOR;
+													}
+"boolean"												{
+															if(l)printf("BOOL\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return BOOL;
+														}
+"class"													{
+															if(l)printf("CLASS\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return CLASS;
+														}
+".length"												{
+															if(l)printf("DOTLENGTH\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return DOTLENGTH;
+														}
+"double"												{
+															if(l)printf("DOUBLE\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return DOUBLE;
+														}
+"else"													{
+															if(l)printf("ELSE\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return ELSE;
+														}
+"if"														{
+																if(l)printf("IF\n");
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+																if(!l)return IF;
+															}
+"int"														{
+																if(l)printf("INT\n");
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+																if(!l)return INT;
+															}
+"System.out.print"											{
+																if(l)printf("PRINT\n");
+																col_syntax=col_count;
+																col_count=col_count+yyleng; 
+																if(!l)return PRINT;
+															}
+"Integer.parseInt"											{
+																if(l)printf("PARSEINT\n");
+																col_syntax=col_count;
+																col_count=col_count+yyleng;
+																return PARSEINT;
+															}
+"public"												{
+															if(l)printf("PUBLIC\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return PUBLIC;
+														}
+"return"												{
+															if(l)printf("RETURN\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return RETURN;
+														}
+"static"												{
+															if(l)printf("STATIC\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng; 
+															if(!l)return STATIC;
+														}
+"String"												{
+															if(l)printf("STRING\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return STRING;
+														}
+"void"													{
+															if(l)printf("VOID\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return VOID;
+														}
+"while"													{
+															if(l)printf("WHILE\n");
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+															if(!l)return WHILE;
+														}
+({alfabeto}|{simbolo})+({numero}|{alfabeto}|{simbolo})* 						{
+																					if(l)printf("ID(%s)\n",yytext);
+																					col_syntax=col_count;
+																					col_count=col_count+yyleng;
+																					if(!l){
+																						yylval.str=strdup(yytext);
+																						return ID;
+																					}
 																				}
-						|	VOID ID LPAR FormalParams RPAR						{
-																					$$ = cria_no("MethodHeader");
-																					aux = cria_no("Void");
-																					type = new_id($2);
-																					add_filho($$, aux);
-																					add_next(aux, type);
-																					add_next(type, $4);
-																				}
-						|	VOID ID LPAR RPAR									{
-																					$$ = cria_no("MethodHeader");
-																					add_filho($$, cria_no("Void"));
-																					add_filho($$, new_id($2));
-																				}
-						;
-FormalParams: 				Type ID FormalParamsRepetition						{
-																					$$ = cria_no("MethodParams");
-																					par = cria_no("ParamDecl");
-																					add_filho($$, par);
-																					add_next(par, $1);
-																					aux = new_id($2);
-																					add_next($1, aux);
-																					add_next(aux, $3);
-																				}				
-						|	STRING LSQ RSQ ID									{
-																					$$ = cria_no("MethodParams");
-																					par = cria_no("ParamDecl");
-																					add_filho($$, par);
-																					add_filho(par, cria_no("StringArray"));
-																					add_filho($$, new_id($4));
-																				}
-						;
-FormalParamsRepetition:															{$$ = NULL;}
-						| 	FormalParamsRepetition COMMA Type ID				{	
-																					$$ = $1;
-																					add_next($1, $3);
-																					add_next($3, new_id($4));
-																				}
-						;
-MethodBody:					LBRACE MethodBodyRepetition RBRACE					{	
-																					$$ = cria_no("MethodBody");
-																					add_filho($$, $2);
-																				}
-						;	
-MethodBodyRepetition:															{$$ = NULL;}
-						|	MethodBodyRepetition Statement						{$$ = $2;}
-						|	MethodBodyRepetition VarDecl						{$$ = $2;}
-						;
-VarDecl:					Type ID CommaIDRepetition SEMICOLON					{
-																					$$ = cria_no("VarDecl");
-																					add_filho($$,$1);
-																					aux = new_id($2);
-																					add_next($1,aux);
-																					add_next(aux, $3);
-																				}
-						;
-Statement:					LBRACE StatementRepetition RBRACE					{$$ = $2;}
-						|	IF LPAR Expr RPAR Statement %prec IF				{
-																					aux = cria_no("If");
-                                                            						add_filho(aux, $3);
-                                                            						add_next($3, $5);
-                                                            						add_next($5, cria_no("Block"));
-                                                            						$$ = aux;
-																				}
-						|	IF LPAR Expr RPAR Statement ELSE Statement			{
-																					aux = cria_no("If");
-                                                            						add_filho(aux, $3);
-                                                            						struct no* aux2 = cria_no("Else");
-                                                            						add_next($3, $5);
-                                                            						add_next($5, cria_no("Block"));
-																					add_next(aux, aux2);
-																					add_filho(aux2, $7);
-                                                            						$$ = aux;
-																				}
-						|	WHILE LPAR Expr RPAR Statement						{
-																					aux = cria_no("While");
-                                                            						add_filho(aux, $3);
-                                                            						add_next($3, $5);
-                                                            						$$ = aux;
-																				}
-						|	RETURN Expr SEMICOLON								{
-																					aux = cria_no("Return");
-                                                            						add_filho(aux, $2);
-                                                            						$$ = aux;
-																				}
-						|	RETURN SEMICOLON									{$$ = cria_no("Return");}
-						|  	SEMICOLON											{$$ = NULL;}
-						|	MethodInvocation SEMICOLON							{$$ = $1;}	
-						|	Assignment SEMICOLON								{$$ = $1;}
-						|   ParseArgs SEMICOLON									{$$ = $1;}
-						|	PRINT LPAR Expr RPAR SEMICOLON						{
-																					aux = cria_no("Print");
-                                                            						add_filho(aux, $3);
-                                                            						$$ = aux;
-																				}
-						|	PRINT LPAR STRLIT RPAR SEMICOLON					{
-																					aux = cria_no("Print");
-                                                            						add_filho(aux, new_strlit($3));
-                                                            						$$ = aux;
-																				}
-						|	error SEMICOLON										{$$ = NULL;}
-						;
-StatementRepetition:															{$$ = NULL;}
-						|	StatementRepetition Statement						{$$ = $2;}
-						;
-MethodInvocation: 			ID LPAR Expr CommaExprRepetition RPAR				{
-																					$$ = cria_no("Call");
-																					aux = new_id($1);
-																					add_filho($$, aux);
-																					add_next(aux, $3);
-																					add_next($3, $4);
-																				}
-						|	ID LPAR RPAR										{
-                                                                        			aux = cria_no("Call");
-                                                                        			add_filho(aux, new_id($1));
-                                                                        			$$ = aux;
-                                                                    			}
-						|	ID LPAR error RPAR									{$$ = NULL;}
-						;
-CommaExprRepetition:															{$$ = NULL;}
-						|	CommaExprRepetition COMMA Expr						{$$ = $3;}
-						;
-Assignment:					ID ASSIGN Expr										{
-																					assign = cria_no("Assign");
-																					aux = new_id($1);
-																					add_filho(assign, aux);
-																					add_filho(assign, $3);
-																					$$ = assign;
-																				}
-						;
-ParseArgs:					PARSEINT LPAR ID LSQ Expr RSQ RPAR					{
-																					$$ = cria_no("ParseArgs");
-																					add_filho( $$,new_id($3)) ;
-																					add_filho($$, $5);
-																				}
-						|	PARSEINT LPAR error RPAR							{$$ = NULL;}
-						;
-Expr:						Expr PLUS Expr										{
-																					aux = cria_no("Plus");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr MINUS Expr										{
-																					aux = cria_no("Minus");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr STAR Expr										{
-																					aux = cria_no("Star");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr DIV Expr										{
-																					aux = cria_no("Div");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr MOD Expr										{
-																					aux = cria_no("Mod");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr AND Expr										{
-																					aux = cria_no("And");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr OR  Expr										{
-																					aux = cria_no("Or");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr XOR Expr										{
-																					aux = cria_no("Xor");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr LSHIFT Expr									{
-																					aux = cria_no("Lshift");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr RSHIFT Expr									{
-																					aux = cria_no("Rshift");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr EQ Expr										{
-																					aux = cria_no("Eq");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr GE Expr										{
-																					aux = cria_no("Ge");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr GT Expr										{
-																					aux = cria_no("Gt");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr LE Expr										{
-																					aux = cria_no("Le");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr LT Expr										{
-																					aux = cria_no("Lt");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	Expr NE Expr										{
-																					aux = cria_no("Ne");
-																					add_filho(aux, $1);
-																					add_filho(aux, $3);
-																					$$ = aux;
-																				}
-						|	MINUS Expr											{
-																					aux = cria_no("Minus");
-                            														add_filho(aux, $2);
-                            														$$ = aux;
-																				}
-						|	NOT Expr											{
-																					aux = cria_no("Not");
-                            														add_filho(aux, $2);
-                            														$$ = aux;
-																				}
-						|	PLUS Expr											{
-																					aux = cria_no("Plus");
-                            														add_filho(aux, $2);
-                            														$$ = aux;
-																				}
-						|	LPAR Expr RPAR										{$$=$2;}
-						|	MethodInvocation 									{$$ = $1;}
-						|	Assignment 											{$$ = $1;}
-						|	ParseArgs											{$$ = $1;}
-						|	ID DOTLENGTH										{$$ = new_id($1);}
-						|	ID 													{$$ = cria_no($1);}			
-						|	INTLIT												{$$ = new_intlit($1);}
-						|  	REALLIT 											{$$ = new_reallit($1);}
-						|  	BOOLLIT												{$$ = new_boollit($1);}
-						| 	LPAR error RPAR										{$$ = NULL;}
-						;
+{whitespace}           									{
+															col_syntax=col_count;
+															col_count+=yyleng;
+														}
+{next_line}												{
+															line_count++;col_count=1;
+														}
+.														{
+															printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);
+															col_syntax=col_count;
+															col_count=col_count+yyleng;
+														}
+<<EOF>>													{
+															col_syntax=col_count;
+															return 0;
+														}
+
 
 
 %%
-
-void yyerror ( char *s) {
-	if(e2){
-		if(yychar==STRLIT){
-			printf("Line %d, col %d: %s: \"%s\"\n",ini_line,ini_col,s,yylval.str);
+int main(int argc, char **argv) {
+	if(argc == 2){
+		if (strcmp(argv[1],"-l") == 0){
+			l = true;
+			e2 = false;
+			yylex();
+		}
+		else if (strcmp(argv[1],"-e1") == 0){
+			l = false;
+			e2 = false;
+			yylex();
+		}
+		else if(strcmp(argv[1],"-e2") == 0){
+			l = false;
+			e2 = true;
+			yyparse();
+		}
+		else if	(strcmp(argv[1], "-t") == 0){
+			e2 = true;
+			yyparse();
+			//print_tree(tree,0);
 		}
 		else{
-			printf("Line %d, col %d: %s: %s\n",line_count,col_syntax,s,yytext);
+			return 0;
 		}
 	}
-}
+	else if (argc == 1){
+		l = false;
+		e2 = true;
+		yyparse();
+	}
 
+	else{
+		return 0;
+	}
+	return 0;
+}
+int yywrap() {
+	return 1;
+}
