@@ -6,7 +6,7 @@
 No* cria_no(char* nome, char* valor){
 	No* n = (No *) malloc(sizeof(No));
 	n->nome = strdup(nome);
-	n->valor = strdup(valor);
+	n->valor = valor;
 	n->filho = NULL;
 	n->irmao = NULL;
 	//printf("Criado no %s\n", n->nome);
@@ -21,7 +21,7 @@ void add_irmao(No* n1, No* n2){
 		aux = aux->irmao;
 	}
 	aux->irmao = n2;
-	printf("Add %s em %s\n", n2->nome, aux->nome);
+	//printf("Add %s em %s\n", n2->nome, aux->nome);
 }
 
 int check_irmao(No* n){
@@ -61,4 +61,3 @@ void free_tree(No* n){
 	free(n->nome);
 	free(n);
 }
-
