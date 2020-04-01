@@ -20,16 +20,17 @@ int error_flag=0;
 int col_syntax = 1;
 int prev_col=1;
 int prev_line=-2;
+int ini_comment_line=1;
 extern struct no* tree;
 %}
 
 
 alfabeto												[a-zA-Z]
 numero													[0-9]
-simbolo            											$|_
+simbolo            										$|_
 exponencial												E|e
-mais_ou_menos												+|-
-whitespace  												" "|\t|\f
+mais_ou_menos											+|-
+whitespace  											" "|\t|\f
 chars													\\(f|n|r|t|\\|\")|[^"\n""\r""\"""\\"]
 reserved												"++"|"--"|"null"|"Integer"|"System"|"abstract"|"continue"|"switch"|"assert"|"default"|"package"|"synchronized"|"do"|"goto"|"private"|"break"|"byte"|"case"|"catch"|"char"|"const"|"enum"|"extends"|"final"|"finally"|"float"|"for"|"implements"|"import"|"instanceof"|"interface"|"long"|"native"|"new"|"protected"|"short"|"strictfp"|"super"|"this"|"throw"|"throws"|"transient"|"try"|"volatile"
 next_line												\n|\r|(\r\n)  
@@ -40,12 +41,13 @@ next_line												\n|\r|(\r\n)
 %X ESCAPE
 
 %%
-"//"													{
+"//"												{
 														BEGIN COMMENT2;
 														col_syntax=col_count;
 														col_count+=yyleng;
+														ini_comment_line=line_count;
 													}
-<COMMENT2>{next_line}											{
+<COMMENT2>{next_line}								{
 														prev_line=line_count;
 														prev_col=col_count;
 														line_count++;
@@ -53,25 +55,25 @@ next_line												\n|\r|(\r\n)
 														col_syntax=col_count;
 														BEGIN 0;
 													}
-<COMMENT2>.												{
+<COMMENT2>.											{
 														col_count+=yyleng;
 														col_syntax=col_count;
 													}
-"/*" 													{
+"/*" 												{
 														BEGIN COMMENT;
 														ini_line=line_count;
 														ini_col=col_count;
 														col_count+=yyleng;
 														col_syntax=col_count;
 													}
-<COMMENT>"*/" 												{
+<COMMENT>"*/" 										{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														BEGIN 0;
 													}
-<COMMENT><<EOF>>											{
+<COMMENT><<EOF>>									{
 														printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);
-														col_syntax=prev_col;
+														col_syntax=col_count;
 														return 0;
 													}
 <COMMENT>{next_line}  											{
@@ -91,26 +93,26 @@ next_line												\n|\r|(\r\n)
 														col_count+=yyleng;
 														BEGIN STR;
 													}
-<STR>{chars}*\\												{
+<STR>{chars}*\\										{
 														col_count+=yyleng;
 														col_syntax=col_count;
 														col_escape=col_count-1;
 														BEGIN ESCAPE;
 													}
-<ESCAPE>{next_line}											{
+<ESCAPE>{next_line}									{
 														printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);
 														printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
 														line_count++;
 														col_count=1;
 														BEGIN 0;
 													}
-<ESCAPE>[^fnrt\\\"]											{
+<ESCAPE>[^fnrt\\\"]									{
 														printf("Line %d, col %d: invalid escape sequence (\\%s)\n",ini_line,col_escape,yytext);
 														col_count+=yyleng;
 														error_flag=1;
 														BEGIN STR;
 													}
-<STR>{chars}*\"												{
+<STR>{chars}*\"										{
 														BEGIN 0;
 														col_count+=yyleng;
 														if(!error_flag){
@@ -127,12 +129,12 @@ next_line												\n|\r|(\r\n)
 															error_flag=0;
 														}
 													}
-<STR><<EOF>>												{
+<STR><<EOF>>										{
 														printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
 														line_count--;
 														return 0;
 													}
-<STR>{next_line}											{
+<STR>{next_line}									{
 														printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
 														line_count++;
 														col_syntax=col_count;
@@ -140,12 +142,12 @@ next_line												\n|\r|(\r\n)
 														error_flag=0;
 														BEGIN 0;
 													}
-<STR>({chars}|" "|"\t")*										{
+<STR>({chars}|" "|"\t")*							{
 														col_syntax=col_count;
 														col_count+=yyleng;
 													}						
 
-{reserved}												{
+{reserved}											{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -165,7 +167,7 @@ next_line												\n|\r|(\r\n)
 															return REALLIT;
 														}
 													}
-([1-9]+(({numero}|"_")*{numero}+)*)|"0"									{
+([1-9]+(({numero}|"_")*{numero}+)*)|"0"				{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -175,7 +177,7 @@ next_line												\n|\r|(\r\n)
 															return INTLIT;
 														}
 													}
-"true"|"false"												{
+"true"|"false"										{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -184,7 +186,7 @@ next_line												\n|\r|(\r\n)
 															return BOOLLIT;
 
 													}
-"&&"													{
+"&&"												{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -234,7 +236,7 @@ next_line												\n|\r|(\r\n)
 															return EQ;
 
 													}	
-">="													{
+">="												{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -259,7 +261,7 @@ next_line												\n|\r|(\r\n)
 														else if(!l && e2)
 															return LBRACE;
 													}
-"<="													{
+"<="												{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -411,7 +413,7 @@ next_line												\n|\r|(\r\n)
 														else if(!l && e2)
 															return BOOL;
 													}
-"class"													{
+"class"												{
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -451,7 +453,7 @@ next_line												\n|\r|(\r\n)
 														else if(!l && e2)
 															return IF;
 													}
-"int"													{
+"int"											    {
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -459,7 +461,7 @@ next_line												\n|\r|(\r\n)
 														else if(!l && e2)
 															return INT;
 													}
-"System.out.print"											{
+"System.out.print"								    {
 														col_syntax=col_count;
 														col_count+=yyleng;
 														if(l)
@@ -538,7 +540,7 @@ next_line												\n|\r|(\r\n)
 														col_count+=yyleng;
 														col_syntax=col_count;
 													}
-{next_line}												{
+{next_line}											{
 														line_count++;
 														col_count=1;
 														col_syntax=col_count;
@@ -548,10 +550,12 @@ next_line												\n|\r|(\r\n)
 														col_count+=yyleng;
 														col_syntax=col_count;
 													}
-<<EOF>>													{
+<<EOF>>												{
 														if(line_count==prev_line+1){
-															col_syntax=prev_col;
-															line_count--;
+															if(ini_comment_line!=line_count){
+																col_syntax=prev_col;
+																line_count--;
+															}
 														}
 														return 0;
 													}
@@ -580,7 +584,7 @@ int main(int argc, char **argv)
 			l=false;
 			e2 = true;
 			yyparse();
-			//print_tree(tree,0);
+			print_tree(tree,0);
 		}
 		else{
 			return 0;
