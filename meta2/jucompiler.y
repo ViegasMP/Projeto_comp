@@ -30,6 +30,7 @@ struct no* par;
 struct no* assign;
 struct no* no_void;
 struct no* no_id;
+struct no* header;
 %}
 
 %union{
@@ -107,7 +108,7 @@ struct no* no_id;
 
 Program: 				CLASS ID LBRACE ProgramRepetition RBRACE				{	
 																					tree = cria_no("Program", NULL);
-																					no_id = cria_no("ID",$2);
+																					no_id = cria_no("Id",$2);
 																					add_filho(tree, no_id);
 																					add_irmao(no_id, $4);
 																				}											
@@ -126,7 +127,7 @@ MethodDecl: 			PUBLIC STATIC MethodHeader MethodBody					{
 FieldDecl: 				PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON		{	
 																					$$ = cria_no("FieldDecl", NULL);
 																					add_filho($$, $3);
-																					no_id = cria_no("ID",$4);
+																					no_id = cria_no("Id",$4);
 																					add_irmao($3, no_id);
 																					add_irmao(no_id, $5);
 																				}
@@ -143,48 +144,65 @@ Type:						BOOL 												{$$ = cria_no("Bool", NULL);}
 						| 	DOUBLE												{$$ = cria_no("Double", NULL);}
 						;
 MethodHeader: 			Type ID LPAR FormalParams RPAR							{
-																					$$ = cria_no("MethodHeader", NULL);
-																					add_filho($$, $1);
+																					header = cria_no("MethodHeader", NULL);
+																					par = cria_no("MethodParams", NULL);
+																					type = $1;
 																					no_id = cria_no("ID", $2);
-																					add_irmao($1, no_id);
-																					add_irmao(no_id, $4);
+																					add_filho(header, type);
+																					add_irmao(type, no_id);
+																					add_irmao(no_id, par);
+																					add_irmao(par, $4);
+																					$$ = header;
 																				}
 						|	Type ID LPAR RPAR									{
-																					$$ = cria_no("MethodHeader", NULL);
-																					add_filho($$, $1);
+																					header = cria_no("MethodHeader", NULL);
+																					par = cria_no("MethodParams", NULL);
+																					type = $1;
+																					no_id = cria_no("ID", $2);
+																					add_filho(header, type);
+																					add_irmao(type, no_id);
+																					add_irmao(no_id, par);
+																					$$ = header;
 																				}
 																				
 						|	VOID ID LPAR FormalParams RPAR						{
-																					$$ = cria_no("MethodHeader", NULL);
+																					header = cria_no("MethodHeader", NULL);
 																					no_void = cria_no("Void", NULL);
+																					par = cria_no("MethodParams", NULL);
 																					no_id = cria_no("ID",$2);
-																					add_filho($$, no_void);
+																					add_filho(header, no_void);
 																					add_irmao(no_void, no_id);
-																					add_irmao(no_id, $4);
+																					add_irmao(no_id, par);
+																					add_irmao(par, $4);
+																					$$ = header;
 																				}				
 						|	VOID ID LPAR RPAR									{
-																					$$ = cria_no("MethodHeader", NULL);
+																					header = cria_no("MethodHeader", NULL);
+																					par = cria_no("MethodParams", NULL);
 																					no_void =  cria_no("Void", NULL);
-																					add_filho($$, no_void);
-																					add_irmao(no_void, cria_no("ID",$2));
+																					no_id = cria_no("ID",$2);
+																					add_filho(header, no_void);
+																					add_irmao(no_void, no_id);
+																					add_irmao(no_id, par);
+																					$$ = header;
 																				}					
 						;
 FormalParams: 			Type ID FormalParamsRepetition							{
-																					$$ = cria_no("MethodParams", NULL);
 																					par = cria_no("ParamDecl", NULL);
 																					add_filho($$, par);
 																					add_filho(par, $1);
 																					aux = cria_no("ID", $2);
 																					add_irmao($1, aux);
 																					add_irmao(aux, $3);
+																					$$ = par;
 																				}									
 						|	STRING LSQ RSQ ID									{
-																					$$ = cria_no("MethodParams", NULL);
 																					par = cria_no("ParamDecl", NULL);
 																					aux = cria_no("StringArray", NULL);
 																					add_filho($$, par);
 																					add_filho(par, aux);
 																					add_irmao(aux, cria_no("ID",$4));
+																					$$ = par;
 																				}					
 						;
 FormalParamsRepetition:															{$$ = NULL;}
@@ -301,7 +319,7 @@ Expr1:					Expr1 PLUS Expr1										{
 																					add_irmao($1, $3);
 																				}
 						|	Expr1 STAR Expr1									{
-																					$$ = cria_no("Star", NULL);
+																					$$ = cria_no("Mul", NULL);
 																					add_filho($$, $1);
 																					add_irmao($1, $3);
 																				}
