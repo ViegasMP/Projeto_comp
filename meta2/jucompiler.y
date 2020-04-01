@@ -136,7 +136,7 @@ FieldDecl: 				PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON		{
 CommaIDRepetition:																{$$ = NULL;}						
 						|	CommaIDRepetition COMMA ID 							{
 																					$$ = $1;
-																					add_irmao($$, cria_no("ID",$3));
+																					add_irmao($$, cria_no("Id",$3));
 																				}			
 						;	
 Type:						BOOL 												{$$ = cria_no("Bool", NULL);}
@@ -147,7 +147,7 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 																					header = cria_no("MethodHeader", NULL);
 																					par = cria_no("MethodParams", NULL);
 																					type = $1;
-																					no_id = cria_no("ID", $2);
+																					no_id = cria_no("Id", $2);
 																					add_filho(header, type);
 																					add_irmao(type, no_id);
 																					add_irmao(no_id, par);
@@ -158,7 +158,7 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 																					header = cria_no("MethodHeader", NULL);
 																					par = cria_no("MethodParams", NULL);
 																					type = $1;
-																					no_id = cria_no("ID", $2);
+																					no_id = cria_no("Id", $2);
 																					add_filho(header, type);
 																					add_irmao(type, no_id);
 																					add_irmao(no_id, par);
@@ -169,7 +169,7 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 																					header = cria_no("MethodHeader", NULL);
 																					no_void = cria_no("Void", NULL);
 																					par = cria_no("MethodParams", NULL);
-																					no_id = cria_no("ID",$2);
+																					no_id = cria_no("Id",$2);
 																					add_filho(header, no_void);
 																					add_irmao(no_void, no_id);
 																					add_irmao(no_id, par);
@@ -180,7 +180,7 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 																					header = cria_no("MethodHeader", NULL);
 																					par = cria_no("MethodParams", NULL);
 																					no_void =  cria_no("Void", NULL);
-																					no_id = cria_no("ID",$2);
+																					no_id = cria_no("Id",$2);
 																					add_filho(header, no_void);
 																					add_irmao(no_void, no_id);
 																					add_irmao(no_id, par);
@@ -191,7 +191,7 @@ FormalParams: 			Type ID FormalParamsRepetition							{
 																					par = cria_no("ParamDecl", NULL);
 																					add_filho($$, par);
 																					add_filho(par, $1);
-																					aux = cria_no("ID", $2);
+																					aux = cria_no("Id", $2);
 																					add_irmao($1, aux);
 																					add_irmao(aux, $3);
 																					$$ = par;
@@ -201,7 +201,7 @@ FormalParams: 			Type ID FormalParamsRepetition							{
 																					aux = cria_no("StringArray", NULL);
 																					add_filho($$, par);
 																					add_filho(par, aux);
-																					add_irmao(aux, cria_no("ID",$4));
+																					add_irmao(aux, cria_no("Id",$4));
 																					$$ = par;
 																				}					
 						;
@@ -209,7 +209,7 @@ FormalParamsRepetition:															{$$ = NULL;}
 						| 	FormalParamsRepetition COMMA Type ID				{	
 																					$$ = $1;
 																					add_irmao($1, $3);
-																					add_irmao($3, cria_no("ID", $4));
+																					add_irmao($3, cria_no("Id", $4));
 																				}
 						;
 MethodBody:				LBRACE MethodBodyRepetition RBRACE						{	
@@ -224,7 +224,7 @@ MethodBodyRepetition:															{$$ = NULL;}
 VarDecl:				Type ID CommaIDRepetition SEMICOLON						{
 																					$$ = cria_no("VarDecl", NULL);
 																					add_filho($$, $1);
-																					aux = cria_no("ID",$2);
+																					aux = cria_no("Id",$2);
 																					add_irmao($1,aux);
 																					add_irmao(aux, $3);
 																				}				
@@ -275,14 +275,14 @@ StatementRepetition:															{$$ = NULL;}
 						;
 MethodInvocation: 		ID LPAR Expr CommaExprRepetition RPAR					{
 																					$$ = cria_no("Call", NULL);
-																					aux = cria_no("ID", NULL);
+																					aux = cria_no("Id", NULL);
 																					add_filho($$, aux);
 																					add_irmao(aux, $3);
 																					add_irmao($3, $4);
 																				}
 						|	ID LPAR RPAR										{
                                                                         			$$ = cria_no("Call", NULL);
-																					aux = cria_no("ID", $1);
+																					aux = cria_no("Id", $1);
                                                                         			add_filho($$, aux);
                                                                     			}
 						|	ID LPAR error RPAR									{$$ = NULL;}
@@ -292,14 +292,14 @@ CommaExprRepetition:															{$$ = NULL;}
 						;
 Assignment:				ID ASSIGN Expr											{
 																					$$ = cria_no("Assign", NULL);
-																					aux = cria_no("ID", $1);
+																					aux = cria_no("Id", $1);
 																					add_filho(assign, aux);
 																					add_irmao(aux, $3);
 																				}
 						;
 ParseArgs:				PARSEINT LPAR ID LSQ Expr RSQ RPAR						{
 																					$$ = cria_no("ParseArgs", NULL);
-																					aux = cria_no("ID", $3);
+																					aux = cria_no("Id", $3);
 																					add_filho($$, aux) ;
 																					add_irmao(aux, $5);
 																				}
@@ -403,8 +403,8 @@ Expr1:					Expr1 PLUS Expr1										{
 						|	LPAR Expr RPAR										{$$=$2;}
 						|	MethodInvocation 									{$$ = $1;}
 						|	ParseArgs											{$$ = $1;}
-						|	ID DOTLENGTH										{$$ = cria_no("ID",$1);}
-						|	ID 													{$$ = cria_no("ID",$1);}			
+						|	ID DOTLENGTH										{$$ = cria_no("Id",$1);}
+						|	ID 													{$$ = cria_no("Id",$1);}			
 						|	INTLIT												{$$ = cria_no("Declit",$1);}
 						|  	REALLIT 											{$$ = cria_no("RealLit",$1);}
 						|  	BOOLLIT												{$$ = cria_no("BoolLit",$1);}
@@ -425,4 +425,3 @@ void yyerror ( char *s) {
 		}
 	}
 }
-
