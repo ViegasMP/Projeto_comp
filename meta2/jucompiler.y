@@ -126,17 +126,24 @@ Program: 				CLASS ID LBRACE RBRACE									{
 						;
 ProgramRepetition:		ProgramRepetition MethodDecl 							{
 																					aux = $1;
-																					add_irmao(aux,$2);
-																					$$ = aux;
+																					if(aux!=NULL){
+																						add_irmao(aux,$2);
+																						$$ = aux;
+																					}else
+																						$$ = $2;
 																				}
 						|	ProgramRepetition FieldDecl 						{
 																					aux = $1;
-																					add_irmao(aux,$2);
-																					$$ = aux;
+																					if(aux!=NULL){
+																						add_irmao(aux,$2);
+																						$$ = aux;
+																					}else
+																						$$ = $2;
 																				}
-						|	ProgramRepetition SEMICOLON							{$$ = $1;}	
+						|	ProgramRepetition SEMICOLON					 		{$$ = $1;}
 						|	FieldDecl											{$$ = $1;}	
-						|	MethodDecl											{$$ = $1;}	
+						|	MethodDecl											{$$ = $1;}
+						|	SEMICOLON											{$$ = NULL;}
 						;
 MethodDecl: 			PUBLIC STATIC MethodHeader MethodBody					{	
 																					aux = cria_no("MethodDecl", NULL);
