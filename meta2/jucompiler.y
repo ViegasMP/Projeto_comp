@@ -36,6 +36,7 @@ struct no* no_if;
 struct no* no_else;
 struct no* no_call;
 struct no* no_parse;
+struct no* no_block;
 %}
 
 %union{
@@ -277,17 +278,25 @@ VarDecl:				Type CommaIDRepetition SEMICOLON						{
 																					$$=dcl;
 																				}				
 						;
-Statement:				LBRACE StatementRepetition RBRACE						{
-																					aux = cria_no("Block", NULL);
-																					add_filho(aux, $2);
-																					$$ = aux;
+Statement:				LBRACE RBRACE											{$$ = NULL;}
+						|	LBRACE StatementRepetition RBRACE					{
+																					aux = $2;
+																					if(aux!=NULL){
+																						if(check_irmao(aux)){
+																							no_block = cria_no("Block", NULL);
+																							add_filho(no_block, aux);
+																							$$ = no_block;
+																						} else{
+																							$$ = aux;
+																						}
+																					} else {
+																						$$=aux;
+																					}
 																				}
-						|	LBRACE RBRACE										{$$ = NULL;}
 						|	IF LPAR Expr RPAR Statement %prec IF				{
 																					no_if = cria_no("If", NULL);
                                                             						add_filho(no_if, $3);
                                                             						add_irmao($3, $5);
-                                                            						add_irmao($5, cria_no("Block", NULL));
 																					$$ = no_if;
 																				}
 						|	IF LPAR Expr RPAR Statement ELSE Statement			{

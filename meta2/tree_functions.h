@@ -11,6 +11,7 @@ typedef struct no{
 No* cria_no(char* nome, char* valor);
 void add_irmao(No* n1, No* n2);
 void add_filho(No* n, No* filho);
+int check_irmao(No* n);
 void tratamentoIDRep(No* pai, No* filho);
 void print_tree(No* n, int nivel);
 void free_tree(No* n);
