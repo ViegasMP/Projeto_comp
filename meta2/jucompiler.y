@@ -361,7 +361,7 @@ MethodInvocation: 		ID LPAR Expr CommaExprRepetition RPAR					{
 						;
 CommaExprRepetition:	COMMA Expr CommaExprRepetition 						{
 																				aux = $2;
-																				add_filho(aux, $3);
+																				add_irmao(aux, $3);
 																				$$ = aux;
 																			}
 						|	COMMA Expr										{$$ = $2;}
