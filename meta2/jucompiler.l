@@ -46,11 +46,8 @@ next_line												\n|\r|(\r\n)
 														BEGIN COMMENT2;
 														col_syntax=col_count;
 														col_count+=yyleng;
-														ini_comment_line=line_count;
 													}
 <COMMENT2>{next_line}								{
-														prev_line=line_count;
-														prev_col=col_count;
 														line_count++;
 														col_count=1;
 														col_syntax=col_count;
@@ -183,9 +180,10 @@ next_line												\n|\r|(\r\n)
 														col_count+=yyleng;
 														if(l)
 															printf("BOOLLIT(%s)\n",yytext);
-														else if(!l && e2)
+														else if(!l && e2){
 															yylval.str=strdup(yytext);
 															return BOOLLIT;
+														}
 
 													}
 "&&"												{
@@ -553,12 +551,14 @@ next_line												\n|\r|(\r\n)
 														col_syntax=col_count;
 													}
 <<EOF>>												{
+														/*
 														if(line_count==prev_line+1){
 															if(ini_comment_line!=line_count){
 																col_syntax=prev_col;
 																line_count--;
 															}
 														}
+														*/
 														return 0;
 													}
 

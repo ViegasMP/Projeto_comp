@@ -33,7 +33,7 @@ struct no* no_void;
 struct no* no_id;
 struct no* header;
 struct no* no_if;
-struct no* no_else;
+struct no* elseblock;
 struct no* no_call;
 struct no* no_parse;
 struct no* no_block;
@@ -296,22 +296,30 @@ Statement:				LBRACE RBRACE											{$$ = NULL;}
 						|	IF LPAR Expr RPAR Statement %prec IF				{
 																					no_if = cria_no("If", NULL);
                                                             						add_filho(no_if, $3);
-                                                            						add_irmao($3, $5);
+																					no_block = cria_no("Block", NULL); 
+																					add_irmao($3, no_block);		
+																					elseblock = cria_no("Block", NULL); 
+																					add_irmao(no_block, elseblock);
+                                                            						add_filho(no_block, $5);
 																					$$ = no_if;
 																				}
 						|	IF LPAR Expr RPAR Statement ELSE Statement			{
 																					no_if = cria_no("If", NULL);
-															 						no_else = cria_no("Else", NULL);
+															 						no_block = cria_no("Block", NULL); 
+																					add_irmao($3, no_block);		
+																					elseblock = cria_no("Block", NULL); 
+																					add_irmao(no_block, elseblock);
                                                             						add_filho(no_if, $3);
-                                                            						add_irmao($3, $5);
-																					add_irmao(no_if, no_else);
-																					add_filho(no_else, $7);
+                                                            						add_filho(no_block, $5);
+																					add_filho(elseblock, $7);
 																					$$=no_if;
 																				}
 						|	WHILE LPAR Expr RPAR Statement						{
 																					aux = cria_no("While", NULL);
                                                             						add_filho(aux, $3);
-                                                            						add_irmao($3, $5);
+																					no_block = cria_no("Block", NULL); 
+																					add_irmao($3, no_block);		
+                                                            						add_irmao(no_block, $5);
 																					$$ = aux;
 																				}
 						|	RETURN Expr SEMICOLON								{
