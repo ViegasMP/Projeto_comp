@@ -38,7 +38,7 @@ void tratamentoVarDecl(No* pai, No* tipo) {
 	No* novo_var = NULL;
 
 	while(actual->irmao != NULL){
-		novo_var = cria_no("VarDecl", NULL);
+		novo_var = cria_no(aux->nome, NULL);
 		No *novo_tipo = cria_no(tipo->nome, NULL);
 		novo_no = actual->irmao;
 		add_irmao(aux, novo_var);

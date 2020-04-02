@@ -212,7 +212,14 @@ FormalParams: 			Type ID FormalParamsRepetition							{
 																					add_filho(par, $1);
 																					aux = cria_no("Id", $2);
 																					add_irmao($1, aux);
-																					add_irmao(aux, $3);
+																					add_irmao(par, $3);
+																					$$ = par;
+																				}	
+						|	Type ID												{
+																					par = cria_no("ParamDecl", NULL);
+																					add_filho(par, $1);
+																					aux = cria_no("Id", $2);
+																					add_irmao($1, aux);
 																					$$ = par;
 																				}									
 						|	STRING LSQ RSQ ID									{
@@ -223,12 +230,18 @@ FormalParams: 			Type ID FormalParamsRepetition							{
 																					$$ = par;
 																				}					
 						;
-FormalParamsRepetition:															{$$=NULL;}
-						|	FormalParamsRepetition COMMA Type ID				{	
-																					aux = $1;
-																					add_irmao(aux, $3);
-																					add_irmao($3, cria_no("Id", $4));
-																					$$ = aux;
+FormalParamsRepetition:	COMMA Type ID FormalParamsRepetition					{	
+																					par = cria_no("ParamDecl", NULL);
+																					add_filho(par, $2);
+																					add_irmao($2, cria_no("Id", $3));
+																					add_irmao(par, $4);
+																					$$ = par;
+																				}
+						|	COMMA Type ID										{	
+																					par = cria_no("ParamDecl", NULL);
+																					add_filho(par, $2);
+																					add_irmao($2, cria_no("Id", $3));
+																					$$ = par;
 																				}
 						;
 MethodBody:				LBRACE MethodBodyRepetition RBRACE						{	
@@ -270,11 +283,11 @@ Statement:				LBRACE StatementRepetition RBRACE						{
 																				}
 						|	LBRACE RBRACE										{$$ = NULL;}
 						|	IF LPAR Expr RPAR Statement %prec IF				{
-																					aux = cria_no("If", NULL);
-                                                            						add_filho(aux, $3);
+																					no_if = cria_no("If", NULL);
+                                                            						add_filho(no_if, $3);
                                                             						add_irmao($3, $5);
                                                             						add_irmao($5, cria_no("Block", NULL));
-																					$$ = aux;
+																					$$ = no_if;
 																				}
 						|	IF LPAR Expr RPAR Statement ELSE Statement			{
 																					no_if = cria_no("If", NULL);
@@ -330,6 +343,13 @@ MethodInvocation: 		ID LPAR Expr CommaExprRepetition RPAR					{
 																					add_irmao($3, $4);
 																					$$ = no_call;
 																				}
+						|	ID LPAR Expr RPAR									{
+																					no_call = cria_no("Call", NULL);
+																					aux = cria_no("Id", $1);
+																					add_filho(no_call, aux);
+																					add_irmao(aux, $3);
+																					$$ = no_call;
+																				}
 						|	ID LPAR RPAR										{
                                                                         			no_call = cria_no("Call", NULL);
 																					aux = cria_no("Id", $1);
@@ -338,8 +358,8 @@ MethodInvocation: 		ID LPAR Expr CommaExprRepetition RPAR					{
                                                                     			}
 						|	ID LPAR error RPAR									{$$ = NULL;}
 						;
-CommaExprRepetition:															{$$ = NULL;}
-						|	CommaExprRepetition COMMA Expr						{$$ = $3;}
+CommaExprRepetition:	CommaExprRepetition COMMA Expr						{$$ = $3;}
+						|	COMMA Expr										{$$ = $2;}
 						;
 Assignment:				ID ASSIGN Expr											{
 																					assign = cria_no("Assign", NULL);
@@ -362,7 +382,7 @@ Expr:					Expr1													{$$ = $1;}
 						| 	Assignment											{$$ = $1;}
 						;
 Expr1:					Expr1 PLUS Expr1										{
-																					aux = cria_no("Plus", NULL);
+																					aux = cria_no("Add", NULL);
 																					add_filho(aux, $1);
 																					add_irmao($1, $3);
 																					$$ = aux;
@@ -458,7 +478,7 @@ Expr1:					Expr1 PLUS Expr1										{
 																					$$ = aux;
 																				}
 						|	MINUS Expr1	%prec NOT								{
-																					aux = cria_no("Sub", NULL);
+																					aux = cria_no("Minus", NULL);
                             														add_filho(aux, $2);
 																					$$ = aux;
 																				}
@@ -475,7 +495,11 @@ Expr1:					Expr1 PLUS Expr1										{
 						|	LPAR Expr RPAR										{$$=$2;}
 						|	MethodInvocation 									{$$ = $1;}
 						|	ParseArgs											{$$ = $1;}
-						|	ID DOTLENGTH										{$$ = cria_no("Id",$1);}
+						|	ID DOTLENGTH										{
+																					aux = cria_no("Length", NULL);
+																					add_filho(aux,cria_no("Id",$1));
+																					$$=aux;
+																				}
 						|	ID 													{$$ = cria_no("Id",$1);}			
 						|	INTLIT												{$$ = cria_no("DecLit",$1);}
 						|  	REALLIT 											{$$ = cria_no("RealLit",$1);}
