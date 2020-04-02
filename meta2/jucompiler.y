@@ -262,13 +262,19 @@ MethodBody:				LBRACE MethodBodyRepetition RBRACE						{
 						;
 MethodBodyRepetition:	MethodBodyRepetition Statement							{
 																					aux = $1;
-																					add_irmao(aux,$2);
-																					$$ = aux;
+																					if(aux!=NULL){
+																						add_irmao(aux,$2);
+																						$$ = aux;
+																					}else
+																						$$ = $2;
 																				}
 						|	MethodBodyRepetition VarDecl						{
 																					aux = $1;
-																					add_irmao(aux,$2);
-																					$$ = aux;
+																					if(aux!=NULL){
+																						add_irmao(aux,$2);
+																						$$ = aux;
+																					}else
+																						$$ = $2;
 																				}
 						|	 Statement											{
 																					$$ = $1;
