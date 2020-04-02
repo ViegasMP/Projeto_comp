@@ -148,6 +148,7 @@ FieldDecl: 				PUBLIC STATIC Type CommaIDRepetition SEMICOLON			{
 																					aux = cria_no("FieldDecl", NULL);
 																					add_filho(aux, $3);
 																					add_irmao($3, $4);
+																					tratamentoIDRep(aux, $3);
 																					$$ = aux;
 																				}
 						|	error SEMICOLON										{$$ = NULL;}
@@ -272,7 +273,7 @@ VarDecl:				Type CommaIDRepetition SEMICOLON						{
 																					dcl = cria_no("VarDecl", NULL);
 																					add_filho(dcl, $1);
 																					add_irmao($1, $2);
-																					tratamentoVarDecl(dcl, $1);
+																					tratamentoIDRep(dcl, $1);
 																					$$=dcl;
 																				}				
 						;
@@ -291,12 +292,12 @@ Statement:				LBRACE StatementRepetition RBRACE						{
 																				}
 						|	IF LPAR Expr RPAR Statement ELSE Statement			{
 																					no_if = cria_no("If", NULL);
+															 						no_else = cria_no("Else", NULL);
                                                             						add_filho(no_if, $3);
-                                                            						no_else = cria_no("Else", NULL);
                                                             						add_irmao($3, $5);
-                                                            						add_irmao($5, cria_no("Block", NULL));
 																					add_irmao(no_if, no_else);
 																					add_filho(no_else, $7);
+																					$$=no_if;
 																				}
 						|	WHILE LPAR Expr RPAR Statement						{
 																					aux = cria_no("While", NULL);
@@ -358,7 +359,11 @@ MethodInvocation: 		ID LPAR Expr CommaExprRepetition RPAR					{
                                                                     			}
 						|	ID LPAR error RPAR									{$$ = NULL;}
 						;
-CommaExprRepetition:	CommaExprRepetition COMMA Expr						{$$ = $3;}
+CommaExprRepetition:	COMMA Expr CommaExprRepetition 						{
+																				aux = $2;
+																				add_filho(aux, $3);
+																				$$ = aux;
+																			}
 						|	COMMA Expr										{$$ = $2;}
 						;
 Assignment:				ID ASSIGN Expr											{

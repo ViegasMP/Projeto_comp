@@ -31,7 +31,7 @@ int check_irmao(No* n){
 }
 
 
-void tratamentoVarDecl(No* pai, No* tipo) {	
+void tratamentoIDRep(No* pai, No* tipo) {	
 	No* aux = pai;
 	No* actual = pai->filho->irmao;
 	No* novo_no = NULL;
