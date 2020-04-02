@@ -30,6 +30,26 @@ int check_irmao(No* n){
 	return 0;
 }
 
+
+void tratamentoVarDecl(No* pai, No* tipo) {	
+	No* aux = pai;
+	No* actual = pai->filho->irmao;
+	No* novo_no = NULL;
+	No* novo_var = NULL;
+
+	while(actual->irmao != NULL){
+		novo_var = cria_no("VarDecl", NULL);
+		No *novo_tipo = cria_no(tipo->nome, NULL);
+		novo_no = actual->irmao;
+		add_irmao(aux, novo_var);
+		add_filho(novo_var, novo_tipo);
+		add_irmao(novo_tipo, actual->irmao);
+		actual->irmao = NULL;
+		actual = novo_no;
+
+	} 				
+}
+
 void add_filho(No* n, No* filho){
 	n->filho = filho;
 }

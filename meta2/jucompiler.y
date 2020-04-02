@@ -14,6 +14,7 @@
 #include "tree_functions.h"
 int yylex(void);
 void yyerror (char *s);
+int syntax_error = 0;
 extern char* yytext;
 extern int line_count;
 extern int col_count;
@@ -31,6 +32,10 @@ struct no* assign;
 struct no* no_void;
 struct no* no_id;
 struct no* header;
+struct no* no_if;
+struct no* no_else;
+struct no* no_call;
+struct no* no_parse;
 %}
 
 %union{
@@ -106,38 +111,53 @@ struct no* header;
 
 %%
 
-Program: 				CLASS ID LBRACE ProgramRepetition RBRACE				{	
+Program: 				CLASS ID LBRACE RBRACE									{	
+																					tree = cria_no("Program", NULL);
+																					no_id = cria_no("Id",$2);
+																					add_filho(tree, no_id);
+																				}
+						|	CLASS ID LBRACE ProgramRepetition RBRACE			{	
 																					tree = cria_no("Program", NULL);
 																					no_id = cria_no("Id",$2);
 																					add_filho(tree, no_id);
 																					add_irmao(no_id, $4);
 																				}											
 						;
-ProgramRepetition:																{$$ = NULL;}							
-						|	ProgramRepetition MethodDecl 						{$$ = $2;}
-						|	ProgramRepetition FieldDecl 						{$$ = $2;}
-						|	ProgramRepetition SEMICOLON							{$$ = $1;}		
+ProgramRepetition:		ProgramRepetition MethodDecl 							{
+																					aux = $1;
+																					add_irmao(aux,$2);
+																					$$ = aux;
+																				}
+						|	ProgramRepetition FieldDecl 						{
+																					aux = $1;
+																					add_irmao(aux,$2);
+																					$$ = aux;
+																				}
+						|	ProgramRepetition SEMICOLON							{$$ = $1;}	
+						|	FieldDecl											{$$ = $1;}	
+						|	MethodDecl											{$$ = $1;}	
 						;
 MethodDecl: 			PUBLIC STATIC MethodHeader MethodBody					{	
-																					$$ = cria_no("MethodDecl", NULL);
-																					add_filho($$, $3);
+																					aux = cria_no("MethodDecl", NULL);
+																					add_filho(aux, $3);
 																					add_irmao($3, $4);
+																					$$=aux;
 																				}		
     					;
-FieldDecl: 				PUBLIC STATIC Type ID CommaIDRepetition SEMICOLON		{	
-																					$$ = cria_no("FieldDecl", NULL);
-																					add_filho($$, $3);
-																					no_id = cria_no("Id",$4);
-																					add_irmao($3, no_id);
-																					add_irmao(no_id, $5);
+FieldDecl: 				PUBLIC STATIC Type CommaIDRepetition SEMICOLON			{	
+																					aux = cria_no("FieldDecl", NULL);
+																					add_filho(aux, $3);
+																					add_irmao($3, $4);
+																					$$ = aux;
 																				}
 						|	error SEMICOLON										{$$ = NULL;}
 						;
-CommaIDRepetition:																{$$ = NULL;}						
-						|	CommaIDRepetition COMMA ID 							{
-																					$$ = $1;
-																					add_irmao($$, cria_no("Id",$3));
-																				}			
+CommaIDRepetition:		CommaIDRepetition COMMA ID 								{
+																					aux = $1;
+																					add_irmao(aux, cria_no("Id",$3));
+																					$$=aux;
+																				}
+						|	ID													{$$ = cria_no("Id",$1);}
 						;	
 Type:						BOOL 												{$$ = cria_no("Bool", NULL);}
 						| 	INT 												{$$ = cria_no("Int", NULL);}
@@ -151,7 +171,7 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 																					add_filho(header, type);
 																					add_irmao(type, no_id);
 																					add_irmao(no_id, par);
-																					add_irmao(par, $4);
+																					add_filho(par, $4);
 																					$$ = header;
 																				}
 						|	Type ID LPAR RPAR									{
@@ -173,7 +193,7 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 																					add_filho(header, no_void);
 																					add_irmao(no_void, no_id);
 																					add_irmao(no_id, par);
-																					add_irmao(par, $4);
+																					add_filho(par, $4);
 																					$$ = header;
 																				}				
 						|	VOID ID LPAR RPAR									{
@@ -189,7 +209,6 @@ MethodHeader: 			Type ID LPAR FormalParams RPAR							{
 						;
 FormalParams: 			Type ID FormalParamsRepetition							{
 																					par = cria_no("ParamDecl", NULL);
-																					add_filho($$, par);
 																					add_filho(par, $1);
 																					aux = cria_no("Id", $2);
 																					add_irmao($1, aux);
@@ -199,60 +218,83 @@ FormalParams: 			Type ID FormalParamsRepetition							{
 						|	STRING LSQ RSQ ID									{
 																					par = cria_no("ParamDecl", NULL);
 																					aux = cria_no("StringArray", NULL);
-																					add_filho($$, par);
 																					add_filho(par, aux);
 																					add_irmao(aux, cria_no("Id",$4));
 																					$$ = par;
 																				}					
 						;
-FormalParamsRepetition:															{$$ = NULL;}
-						| 	FormalParamsRepetition COMMA Type ID				{	
-																					$$ = $1;
-																					add_irmao($1, $3);
+FormalParamsRepetition:															{$$=NULL;}
+						|	FormalParamsRepetition COMMA Type ID				{	
+																					aux = $1;
+																					add_irmao(aux, $3);
 																					add_irmao($3, cria_no("Id", $4));
+																					$$ = aux;
 																				}
 						;
 MethodBody:				LBRACE MethodBodyRepetition RBRACE						{	
-																					$$ = cria_no("MethodBody", NULL);
-																					add_filho($$, $2);
+																					body = cria_no("MethodBody", NULL);
+																					add_filho(body, $2);
+																					$$ = body;
+																				}
+						|	LBRACE RBRACE										{$$ = cria_no("MethodBody", NULL);}														
+						;
+MethodBodyRepetition:	MethodBodyRepetition Statement							{
+																					aux = $1;
+																					add_irmao(aux,$2);
+																					$$ = aux;
+																				}
+						|	MethodBodyRepetition VarDecl						{
+																					aux = $1;
+																					add_irmao(aux,$2);
+																					$$ = aux;
+																				}
+						|	 Statement											{
+																					$$ = $1;
+																				}
+						|	 VarDecl											{
+																					$$ = $1;
 																				}
 						;
-MethodBodyRepetition:															{$$ = NULL;}
-						|	MethodBodyRepetition Statement						{$$ = $2;}
-						|	MethodBodyRepetition VarDecl						{$$ = $2;}
-						;
-VarDecl:				Type ID CommaIDRepetition SEMICOLON						{
-																					$$ = cria_no("VarDecl", NULL);
-																					add_filho($$, $1);
-																					aux = cria_no("Id",$2);
-																					add_irmao($1,aux);
-																					add_irmao(aux, $3);
+VarDecl:				Type CommaIDRepetition SEMICOLON						{
+																					dcl = cria_no("VarDecl", NULL);
+																					add_filho(dcl, $1);
+																					add_irmao($1, $2);
+																					tratamentoVarDecl(dcl, $1);
+																					$$=dcl;
 																				}				
 						;
-Statement:				LBRACE StatementRepetition RBRACE						{$$ = $2;}
+Statement:				LBRACE StatementRepetition RBRACE						{
+																					aux = cria_no("Block", NULL);
+																					add_filho(aux, $2);
+																					$$ = aux;
+																				}
+						|	LBRACE RBRACE										{$$ = NULL;}
 						|	IF LPAR Expr RPAR Statement %prec IF				{
-																					$$ = cria_no("If", NULL);
-                                                            						add_filho($$, $3);
+																					aux = cria_no("If", NULL);
+                                                            						add_filho(aux, $3);
                                                             						add_irmao($3, $5);
                                                             						add_irmao($5, cria_no("Block", NULL));
+																					$$ = aux;
 																				}
 						|	IF LPAR Expr RPAR Statement ELSE Statement			{
-																					$$ = cria_no("If", NULL);
-                                                            						add_filho($$, $3);
-                                                            						aux = cria_no("Else", NULL);
+																					no_if = cria_no("If", NULL);
+                                                            						add_filho(no_if, $3);
+                                                            						no_else = cria_no("Else", NULL);
                                                             						add_irmao($3, $5);
                                                             						add_irmao($5, cria_no("Block", NULL));
-																					add_irmao($$, aux);
-																					add_filho(aux, $7);
+																					add_irmao(no_if, no_else);
+																					add_filho(no_else, $7);
 																				}
 						|	WHILE LPAR Expr RPAR Statement						{
-																					$$ = cria_no("While", NULL);
-                                                            						add_filho($$, $3);
+																					aux = cria_no("While", NULL);
+                                                            						add_filho(aux, $3);
                                                             						add_irmao($3, $5);
+																					$$ = aux;
 																				}
 						|	RETURN Expr SEMICOLON								{
-																					$$ = cria_no("Return", NULL);
-                                                            						add_filho($$, $2);
+																					aux = cria_no("Return", NULL);
+                                                            						add_filho(aux, $2);
+																					$$ = aux;
 																				}
 						|	RETURN SEMICOLON									{$$ = cria_no("Return", NULL);}
 						|  	SEMICOLON											{$$ = NULL;}
@@ -260,30 +302,39 @@ Statement:				LBRACE StatementRepetition RBRACE						{$$ = $2;}
 						|	Assignment SEMICOLON								{$$ = $1;}
 						|   ParseArgs SEMICOLON									{$$ = $1;}
 						|	PRINT LPAR Expr RPAR SEMICOLON						{
-																					$$ = cria_no("Print", NULL);
-                                                            						add_filho($$, $3);
+																					aux = cria_no("Print", NULL);
+                                                            						add_filho(aux, $3);
+																					$$ = aux;
 																				}
 						|	PRINT LPAR STRLIT RPAR SEMICOLON					{
-																					$$ = cria_no("Print", NULL);
-																					aux = cria_no("StrLit", $3);
-                                                            						add_filho($$, aux);
+																					aux = cria_no("Print", NULL);
+                                                            						add_filho(aux, cria_no("StrLit", $3));
+																					$$ = aux;
 																				}
 						|	error SEMICOLON										{$$ = NULL;}
 						;
-StatementRepetition:															{$$ = NULL;}
-						|	StatementRepetition Statement						{$$ = $2;}
+StatementRepetition:	StatementRepetition Statement							{
+																					aux = $1;
+																					add_irmao(aux,$2);
+																					$$ = aux;
+																				}
+						|	Statement											{
+																					$$ = $1;
+																				}
 						;
 MethodInvocation: 		ID LPAR Expr CommaExprRepetition RPAR					{
-																					$$ = cria_no("Call", NULL);
-																					aux = cria_no("Id", NULL);
-																					add_filho($$, aux);
+																					no_call = cria_no("Call", NULL);
+																					aux = cria_no("Id", $1);
+																					add_filho(no_call, aux);
 																					add_irmao(aux, $3);
 																					add_irmao($3, $4);
+																					$$ = no_call;
 																				}
 						|	ID LPAR RPAR										{
-                                                                        			$$ = cria_no("Call", NULL);
+                                                                        			no_call = cria_no("Call", NULL);
 																					aux = cria_no("Id", $1);
-                                                                        			add_filho($$, aux);
+                                                                        			add_filho(no_call, aux);
+																					$$ = no_call;
                                                                     			}
 						|	ID LPAR error RPAR									{$$ = NULL;}
 						;
@@ -291,17 +342,19 @@ CommaExprRepetition:															{$$ = NULL;}
 						|	CommaExprRepetition COMMA Expr						{$$ = $3;}
 						;
 Assignment:				ID ASSIGN Expr											{
-																					$$ = cria_no("Assign", NULL);
+																					assign = cria_no("Assign", NULL);
 																					aux = cria_no("Id", $1);
 																					add_filho(assign, aux);
 																					add_irmao(aux, $3);
+																					$$ = assign;
 																				}
 						;
 ParseArgs:				PARSEINT LPAR ID LSQ Expr RSQ RPAR						{
-																					$$ = cria_no("ParseArgs", NULL);
+																					no_parse = cria_no("ParseArgs", NULL);
 																					aux = cria_no("Id", $3);
-																					add_filho($$, aux) ;
+																					add_filho(no_parse, aux);
 																					add_irmao(aux, $5);
+																					$$ = no_parse;
 																				}
 						|	PARSEINT LPAR error RPAR							{$$ = NULL;}
 						;
@@ -309,103 +362,122 @@ Expr:					Expr1													{$$ = $1;}
 						| 	Assignment											{$$ = $1;}
 						;
 Expr1:					Expr1 PLUS Expr1										{
-																					$$ = cria_no("Plus", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Plus", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 MINUS Expr1									{
-																					$$ = cria_no("Minus", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Sub", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 STAR Expr1									{
-																					$$ = cria_no("Mul", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Mul", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 DIV Expr1										{
-																					$$ = cria_no("Div", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Div", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 MOD Expr1										{
-																					$$ = cria_no("Mod", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Mod", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 AND Expr1										{
-																					$$ = cria_no("And", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("And", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 OR  Expr1										{
-																					$$ = cria_no("Or", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Or", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 XOR Expr1										{
-																					$$ = cria_no("Xor", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Xor", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 LSHIFT Expr1									{
-																					$$ = cria_no("Lshift", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Lshift", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 RSHIFT Expr1									{
-																					$$ = cria_no("Rshift", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Rshift", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 EQ Expr1										{
-																					$$ = cria_no("Eq", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Eq", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 GE Expr1										{
-																					$$ = cria_no("Ge", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Ge", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 GT Expr1										{
-																					$$ = cria_no("Gt", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Gt", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 LE Expr1										{
-																					$$ = cria_no("Le", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Le", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 LT Expr1										{
-																					$$ = cria_no("Lt", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Lt", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	Expr1 NE Expr1										{
-																					$$ = cria_no("Ne", NULL);
-																					add_filho($$, $1);
+																					aux = cria_no("Ne", NULL);
+																					add_filho(aux, $1);
 																					add_irmao($1, $3);
+																					$$ = aux;
 																				}
 						|	MINUS Expr1	%prec NOT								{
-																					$$ = cria_no("Minus", NULL);
-                            														add_filho($$, $2);
+																					aux = cria_no("Sub", NULL);
+                            														add_filho(aux, $2);
+																					$$ = aux;
 																				}
 						|	NOT Expr1											{
-																					$$ = cria_no("Not", NULL);
-                            														add_filho($$, $2);
+																					aux = cria_no("Not", NULL);
+                            														add_filho(aux, $2);
+																					$$ = aux;
 																				}
 						|	PLUS Expr1 %prec NOT								{
-																					$$ = cria_no("Plus", NULL);
-                            														add_filho($$, $2);
+																					aux = cria_no("Plus", NULL);
+                            														add_filho(aux, $2);
+																					$$ = aux;
 																				}
 						|	LPAR Expr RPAR										{$$=$2;}
 						|	MethodInvocation 									{$$ = $1;}
 						|	ParseArgs											{$$ = $1;}
 						|	ID DOTLENGTH										{$$ = cria_no("Id",$1);}
 						|	ID 													{$$ = cria_no("Id",$1);}			
-						|	INTLIT												{$$ = cria_no("Declit",$1);}
+						|	INTLIT												{$$ = cria_no("DecLit",$1);}
 						|  	REALLIT 											{$$ = cria_no("RealLit",$1);}
 						|  	BOOLLIT												{$$ = cria_no("BoolLit",$1);}
 						| 	LPAR error RPAR										{$$ = NULL;}
@@ -415,6 +487,7 @@ Expr1:					Expr1 PLUS Expr1										{
 %%
 
 void yyerror ( char *s) {
+	syntax_error = 1;
 	if(e2){
 		if(yychar==STRLIT){
 			printf("Line %d, col %d: %s: \"%s\n",ini_line,ini_col,s,yylval.str);

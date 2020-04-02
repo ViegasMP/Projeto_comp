@@ -22,6 +22,7 @@ int prev_col=1;
 int prev_line=-2;
 int ini_comment_line=1;
 extern struct no* tree;
+extern int syntax_error;
 %}
 
 
@@ -183,6 +184,7 @@ next_line												\n|\r|(\r\n)
 														if(l)
 															printf("BOOLLIT(%s)\n",yytext);
 														else if(!l && e2)
+															yylval.str=strdup(yytext);
 															return BOOLLIT;
 
 													}
@@ -584,7 +586,8 @@ int main(int argc, char **argv)
 			l=false;
 			e2 = true;
 			yyparse();
-			print_tree(tree,0);
+			if(syntax_error==0)
+				print_tree(tree,0);
 		}
 		else{
 			return 0;
