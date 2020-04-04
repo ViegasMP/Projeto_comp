@@ -291,7 +291,9 @@ VarDecl:				Type CommaIDRepetition SEMICOLON						{
 																					$$=dcl;
 																				}				
 						;
-Statement:				LBRACE RBRACE											{$$ = NULL;}
+Statement:				LBRACE RBRACE											{
+																					$$ = NULL;
+																				}
 						|	LBRACE StatementRepetition RBRACE					{
 																					aux = $2;
 																					if(aux!=NULL){
@@ -303,36 +305,56 @@ Statement:				LBRACE RBRACE											{$$ = NULL;}
 																							$$ = aux;
 																						}
 																					} else {
-																						$$=aux;
+																						$$=NULL;
 																					}
 																				}
 						|	IF LPAR Expr RPAR Statement %prec IF				{
 																					no_if = cria_no("If", NULL);
-                                                            						add_filho(no_if, $3);
-																					no_block = cria_no("Block", NULL); 
-																					add_irmao($3, no_block);		
+																					aux = $3;
+                                                            						add_filho(no_if, aux);
+																					no_block = cria_no("Block", NULL);
 																					elseblock = cria_no("Block", NULL); 
-																					add_irmao(no_block, elseblock);
-                                                            						add_filho(no_block, $5);
+																					if($5==NULL){
+																						add_irmao(aux, no_block);
+																						add_irmao(no_block, elseblock);
+																					}else{
+                                                            							add_irmao(aux, $5);
+																						add_irmao($5, no_block);
+																					}
 																					$$ = no_if;
 																				}
 						|	IF LPAR Expr RPAR Statement ELSE Statement			{
 																					no_if = cria_no("If", NULL);
-															 						no_block = cria_no("Block", NULL); 
-																					add_irmao($3, no_block);		
+																					aux = $3;
+                                                            						add_filho(no_if, aux);
+																					no_block = cria_no("Block", NULL);
 																					elseblock = cria_no("Block", NULL); 
-																					add_irmao(no_block, elseblock);
-                                                            						add_filho(no_if, $3);
-                                                            						add_filho(no_block, $5);
-																					add_filho(elseblock, $7);
+																					if($5==NULL && $7==NULL){
+																						add_irmao(aux,no_block);
+																						add_irmao(no_block,elseblock);
+																					}else if($5!=NULL && $7==NULL){
+																						add_irmao(aux,$5);
+																						add_irmao($5,no_block);
+																					}else if($5==NULL && $7!=NULL){
+																						add_irmao(aux,elseblock);
+																						add_irmao(elseblock,$7);
+																					}else if($5!=NULL && $7!=NULL){
+																						add_irmao(aux,$5);
+																						add_irmao($5,$7);
+																					}
+
+
 																					$$=no_if;
 																				}
 						|	WHILE LPAR Expr RPAR Statement						{
 																					aux = cria_no("While", NULL);
                                                             						add_filho(aux, $3);
-																					no_block = cria_no("Block", NULL); 
-																					add_irmao($3, no_block);		
-                                                            						add_irmao(no_block, $5);
+																					no_block = cria_no("Block", NULL);
+																					if($5==NULL){
+																						add_irmao($3, no_block);
+																					}else{
+																						add_irmao($3, $5);
+																					}
 																					$$ = aux;
 																				}
 						|	RETURN Expr SEMICOLON								{
