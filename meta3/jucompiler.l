@@ -8,11 +8,12 @@
 #include <stdbool.h> 
 #include "y.tab.h"
 #include "tree_functions.h"
+#include "semantic.h"
 #include "symbol_table.h"
+
 int yyparse(void);
 bool l;
 bool e2;
-bool s;
 int line_count=1;
 int col_count=1;
 int ini_line=1; //guarda linha em que começa comentario ou string
@@ -572,51 +573,54 @@ int main(int argc, char **argv)
 		if (strcmp(argv[1],"-l") == 0){
 			l = true;
 			e2 = false;
-			s = false;
 			yylex();
+			free_tree(tree);
 		}
 		else if (strcmp(argv[1],"-e1") == 0){
 			l = false;
 			e2 = false;
-			s = false;
 			yylex();
+			free_tree(tree);
 		}
 		else if(strcmp(argv[1],"-e2") == 0){
 			l = false;
 			e2 = true;
-			s = false;
 			yyparse();
+			free_tree(tree);
 		}
 		else if	(strcmp(argv[1], "-t") == 0){
 			l=false;
 			e2 = true;
-			s = false;
 			yyparse();
 			if(syntax_error==0)
 				print_tree(tree,0);
+			free_tree(tree);
 		}
 		else if(strcmp(argv[1], "-s") == 0){
 			l=false;
-			e2=true;
-			s = true;
+			e2 = true;
 			yyparse();
-			if(syntax_error==0){
-				inicia_tabela_global();
-				print_symbol_table(root);
-				print_tree(tree, 0);
-			}
-		}
-		else{
+			init_global_table(tree->filho);
+
+			last_table = root_table;
+			local_dfs(tree, last_table);
+
+			print_tables(root_table);
+			print_tree(tree,0);
+			free_tree(tree);
+			return 0;
+		} else {
 			return 0;
 		}
 	}
 	else if (argc == 1){
 		l = false;
 		e2 = true;
-		s = false;
 		yyparse();
+		free_tree(tree);
 	}
 	else{
+		free_tree(tree);
 		return 0;
 	}
 	return 0;

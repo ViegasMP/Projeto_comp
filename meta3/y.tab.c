@@ -2659,9 +2659,11 @@ void yyerror ( char *s) {
 	if(e2){
 		if(yychar==STRLIT){
 			printf("Line %d, col %d: %s: \"%s\n",ini_line,ini_col,s,yylval.str);
+
 		}
 		else{
 			printf("Line %d, col %d: %s: %s\n",line_count,col_syntax,s,yytext);
 		}
 	}
 }
+

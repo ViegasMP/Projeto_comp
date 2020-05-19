@@ -30,6 +30,7 @@ int check_irmao(No* n){
 	return 0;
 }
 
+
 void tratamentoIDRep(No* pai, No* tipo) {	
 	No* aux = pai;
 	No* actual = pai->filho->irmao;
@@ -53,6 +54,7 @@ void add_filho(No* n, No* filho){
 	n->filho = filho;
 }
 
+
 void print_tree(No* n, int nivel) {
     int i;
 	if(n==NULL) return;
@@ -64,7 +66,7 @@ void print_tree(No* n, int nivel) {
 	print_tree(n->filho, nivel+1);
 	//imprime irmaos
 	print_tree(n->irmao, nivel);
-}
+ }
 
 void free_tree(No* n){
 	if (n == NULL) return;

@@ -904,7 +904,9 @@ char *yytext;
 #include <stdbool.h> 
 #include "y.tab.h"
 #include "tree_functions.h"
+#include "semantic.h"
 #include "symbol_table.h"
+
 int yyparse(void);
 bool l;
 bool e2;
@@ -924,7 +926,7 @@ extern int syntax_error;
 
 
 
-#line 928 "lex.yy.c"
+#line 930 "lex.yy.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -1110,9 +1112,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 45 "jucompiler.l"
+#line 47 "jucompiler.l"
 
-#line 1116 "lex.yy.c"
+#line 1118 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -1197,7 +1199,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 46 "jucompiler.l"
+#line 48 "jucompiler.l"
 {
 														BEGIN COMMENT2;
 														col_syntax=col_count;
@@ -1207,7 +1209,7 @@ YY_RULE_SETUP
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 51 "jucompiler.l"
+#line 53 "jucompiler.l"
 {
 														line_count++;
 														col_count=1;
@@ -1217,7 +1219,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 57 "jucompiler.l"
+#line 59 "jucompiler.l"
 {
 														col_count+=yyleng;
 														col_syntax=col_count;
@@ -1225,7 +1227,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 61 "jucompiler.l"
+#line 63 "jucompiler.l"
 {
 														BEGIN COMMENT;
 														ini_line=line_count;
@@ -1236,7 +1238,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 68 "jucompiler.l"
+#line 70 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1244,7 +1246,7 @@ YY_RULE_SETUP
 													}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 73 "jucompiler.l"
+#line 75 "jucompiler.l"
 {
 														printf("Line %d, col %d: unterminated comment\n",ini_line,ini_col);
 														col_syntax=col_count;
@@ -1254,7 +1256,7 @@ case YY_STATE_EOF(COMMENT):
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 78 "jucompiler.l"
+#line 80 "jucompiler.l"
 {
 														line_count++;
 														col_count=1;
@@ -1263,7 +1265,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 83 "jucompiler.l"
+#line 85 "jucompiler.l"
 {
 														col_count+=yyleng;
 														col_syntax=col_count;
@@ -1272,7 +1274,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 88 "jucompiler.l"
+#line 90 "jucompiler.l"
 {
 														ini_line=line_count;
 														ini_col=col_count;
@@ -1283,7 +1285,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 95 "jucompiler.l"
+#line 97 "jucompiler.l"
 {
 														col_count+=yyleng;
 														col_syntax=col_count;
@@ -1294,7 +1296,7 @@ YY_RULE_SETUP
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
-#line 101 "jucompiler.l"
+#line 103 "jucompiler.l"
 {
 														printf("Line %d, col %d: invalid escape sequence (\\)\n",ini_line,col_escape);
 														printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
@@ -1306,7 +1308,7 @@ YY_RULE_SETUP
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 108 "jucompiler.l"
+#line 110 "jucompiler.l"
 {
 														printf("Line %d, col %d: invalid escape sequence (\\%s)\n",ini_line,col_escape,yytext);
 														col_count+=yyleng;
@@ -1316,7 +1318,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 114 "jucompiler.l"
+#line 116 "jucompiler.l"
 {
 														BEGIN 0;
 														col_count+=yyleng;
@@ -1336,7 +1338,7 @@ YY_RULE_SETUP
 													}
 	YY_BREAK
 case YY_STATE_EOF(STR):
-#line 131 "jucompiler.l"
+#line 133 "jucompiler.l"
 {
 														printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
 														line_count--;
@@ -1346,7 +1348,7 @@ case YY_STATE_EOF(STR):
 case 13:
 /* rule 13 can match eol */
 YY_RULE_SETUP
-#line 136 "jucompiler.l"
+#line 138 "jucompiler.l"
 {
 														printf("Line %d, col %d: unterminated string literal\n",ini_line,ini_col);
 														line_count++;
@@ -1358,7 +1360,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 144 "jucompiler.l"
+#line 146 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1366,7 +1368,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 149 "jucompiler.l"
+#line 151 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1380,7 +1382,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 159 "jucompiler.l"
+#line 161 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1394,7 +1396,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 169 "jucompiler.l"
+#line 171 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1408,7 +1410,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 179 "jucompiler.l"
+#line 181 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1423,7 +1425,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 190 "jucompiler.l"
+#line 192 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1436,7 +1438,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 199 "jucompiler.l"
+#line 201 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1448,7 +1450,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 207 "jucompiler.l"
+#line 209 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1460,7 +1462,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 215 "jucompiler.l"
+#line 217 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1472,7 +1474,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 223 "jucompiler.l"
+#line 225 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1484,7 +1486,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 231 "jucompiler.l"
+#line 233 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1497,7 +1499,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 240 "jucompiler.l"
+#line 242 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1510,7 +1512,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 249 "jucompiler.l"
+#line 251 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1522,7 +1524,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 257 "jucompiler.l"
+#line 259 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1534,7 +1536,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 265 "jucompiler.l"
+#line 267 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1546,7 +1548,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 273 "jucompiler.l"
+#line 275 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1558,7 +1560,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 281 "jucompiler.l"
+#line 283 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1570,7 +1572,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 289 "jucompiler.l"
+#line 291 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1582,7 +1584,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 297 "jucompiler.l"
+#line 299 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1594,7 +1596,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 305 "jucompiler.l"
+#line 307 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1606,7 +1608,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 313 "jucompiler.l"
+#line 315 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1618,7 +1620,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 321 "jucompiler.l"
+#line 323 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1630,7 +1632,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 329 "jucompiler.l"
+#line 331 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1642,7 +1644,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 337 "jucompiler.l"
+#line 339 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1654,7 +1656,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 345 "jucompiler.l"
+#line 347 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1666,7 +1668,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 353 "jucompiler.l"
+#line 355 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1678,7 +1680,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 361 "jucompiler.l"
+#line 363 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1690,7 +1692,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 369 "jucompiler.l"
+#line 371 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1702,7 +1704,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 377 "jucompiler.l"
+#line 379 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1714,7 +1716,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 385 "jucompiler.l"
+#line 387 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1726,7 +1728,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 393 "jucompiler.l"
+#line 395 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1738,7 +1740,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 401 "jucompiler.l"
+#line 403 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1750,7 +1752,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 409 "jucompiler.l"
+#line 411 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1762,7 +1764,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 417 "jucompiler.l"
+#line 419 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1774,7 +1776,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 425 "jucompiler.l"
+#line 427 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1786,7 +1788,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 433 "jucompiler.l"
+#line 435 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1798,7 +1800,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 441 "jucompiler.l"
+#line 443 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1810,7 +1812,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 449 "jucompiler.l"
+#line 451 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1822,7 +1824,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 457 "jucompiler.l"
+#line 459 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1834,7 +1836,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 465 "jucompiler.l"
+#line 467 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1846,7 +1848,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 473 "jucompiler.l"
+#line 475 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1858,7 +1860,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 481 "jucompiler.l"
+#line 483 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1870,7 +1872,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 489 "jucompiler.l"
+#line 491 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1883,7 +1885,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 498 "jucompiler.l"
+#line 500 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1895,7 +1897,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 506 "jucompiler.l"
+#line 508 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1907,7 +1909,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 514 "jucompiler.l"
+#line 516 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1919,7 +1921,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 522 "jucompiler.l"
+#line 524 "jucompiler.l"
 {
 														col_syntax=col_count;
 														col_count+=yyleng;
@@ -1931,7 +1933,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 530 "jucompiler.l"
+#line 532 "jucompiler.l"
 {
 															col_syntax=col_count;
 															col_count+=yyleng;
@@ -1945,7 +1947,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 540 "jucompiler.l"
+#line 542 "jucompiler.l"
 {
 														col_count+=yyleng;
 														col_syntax=col_count;
@@ -1954,7 +1956,7 @@ YY_RULE_SETUP
 case 63:
 /* rule 63 can match eol */
 YY_RULE_SETUP
-#line 544 "jucompiler.l"
+#line 546 "jucompiler.l"
 {
 														line_count++;
 														col_count=1;
@@ -1963,7 +1965,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 549 "jucompiler.l"
+#line 551 "jucompiler.l"
 {
 														printf("Line %d, col %d: illegal character (%s)\n",line_count,col_count,yytext);
 														col_count+=yyleng;
@@ -1973,7 +1975,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT2):
 case YY_STATE_EOF(ESCAPE):
-#line 554 "jucompiler.l"
+#line 556 "jucompiler.l"
 {
 														/*
 														if(line_count==prev_line+1){
@@ -1988,10 +1990,10 @@ case YY_STATE_EOF(ESCAPE):
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 567 "jucompiler.l"
+#line 569 "jucompiler.l"
 ECHO;
 	YY_BREAK
-#line 1995 "lex.yy.c"
+#line 1997 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2986,7 +2988,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 567 "jucompiler.l"
+#line 569 "jucompiler.l"
 
 
 int main(int argc, char **argv)
@@ -2996,16 +2998,19 @@ int main(int argc, char **argv)
 			l = true;
 			e2 = false;
 			yylex();
+			free_tree(tree);
 		}
 		else if (strcmp(argv[1],"-e1") == 0){
 			l = false;
 			e2 = false;
 			yylex();
+			free_tree(tree);
 		}
 		else if(strcmp(argv[1],"-e2") == 0){
 			l = false;
 			e2 = true;
 			yyparse();
+			free_tree(tree);
 		}
 		else if	(strcmp(argv[1], "-t") == 0){
 			l=false;
@@ -3013,17 +3018,22 @@ int main(int argc, char **argv)
 			yyparse();
 			if(syntax_error==0)
 				print_tree(tree,0);
+			free_tree(tree);
 		}
 		else if(strcmp(argv[1], "-s") == 0){
 			l=false;
-			e2=true;
-			inicia_tabela_global();
-			print_symbol_table(root);
-			print_tree(tree, 0);
-			
+			e2 = true;
+			yyparse();
+			init_global_table(tree->filho);
 
-		}
-		else{
+			last_table = root_table;
+			local_dfs(tree, last_table);
+
+			print_tables(root_table);
+			print_tree(tree,0);
+			free_tree(tree);
+			return 0;
+		} else {
 			return 0;
 		}
 	}
@@ -3031,8 +3041,10 @@ int main(int argc, char **argv)
 		l = false;
 		e2 = true;
 		yyparse();
+		free_tree(tree);
 	}
 	else{
+		free_tree(tree);
 		return 0;
 	}
 	return 0;

@@ -1,119 +1,145 @@
 #include "symbol_table.h"
-#include "tree_functions.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "semantic.h"
 
-void inicia_tabela_global() {
-	Tabela *tabela_aux = (Tabela*) malloc(sizeof(Tabela));
+void init_global_table(No* no) {
+	table *new_table = (table*) malloc(sizeof(table));
 
-	tabela_aux->method = 0;
-	strcpy(tabela_aux->nome, "");
-	strcpy(tabela_aux->tipo_return, "");
+	new_table->func = 0;
+	new_table->nome = strdup(no->valor);
 
-	tabela_aux->n_parametros = 0;
-	strcpy(tabela_aux->params_str, "");
+	new_table->n_params = 0;
 
-	tabela_aux->n_variaveis = 0;
+	new_table->n_vars = 0;
 
-	tabela_aux->next = NULL;
-	root = tabela_aux;
-	symbol_table = tabela_aux;
+	new_table->next = NULL;
+	root_table = new_table;
+	last_table = new_table;
+
+    global_dfs(no->irmao);
+
 }
 
-Tabela* inicia_tabela_metodos() {
-	Tabela *tabela_aux = (Tabela*) malloc(sizeof(Tabela));
+table *init_method_table() {
+	table *new_table = (table*) malloc(sizeof(table));
 
-	tabela_aux->method = 1;
-	strcpy(tabela_aux->nome, "");
-	strcpy(tabela_aux->tipo_return, "");
+	new_table->func = 1;
+	new_table->n_params = 0;
+	new_table->n_vars = 0;
+	new_table->next = NULL;
+	last_table->next = new_table;
+	last_table = last_table->next;
 
-	tabela_aux->n_parametros = 0;
-	strcpy(tabela_aux->params_str, "");
-
-	tabela_aux->n_variaveis = 0;
-
-	tabela_aux->next = NULL;
-	symbol_table->next = tabela_aux;
-	symbol_table = symbol_table->next;
-
-	return tabela_aux;
+	return new_table;
 }
 
-void add_param(Tabela *t, char *param, char *type) {
-	int i = t->n_parametros;
-	t->parametros = realloc(t->parametros, sizeof(char*) * (i + 2));
-	t->parametros[i] = (char*) malloc(sizeof(char));							
-	t->parametros[i + 1] = (char*) malloc(sizeof(char));
-	t->n_parametros += 2;
-	strcpy(t->parametros[i], param);		
-	strcpy(t->parametros[i+1], type);		
+void add_param_to_table(table *t, char *param, char *type) {
+	int place = t->n_params;				/* Número total de parâmetros, ou seja, se forem 2 (param,tipo), o place a colocar o novo parâmetro vai ser 2 */
+	
+	increaseParams(t);						/* Acrescentam-se duas posições */
+	strcpy(t->params[place], param);		/* Mete-se o PARAM na posição place */
+	strcpy(t->params[place + 1], type);		/* Mete-se o TYPE na posição place+1 */
 
-	if(i != 0)							
+	if(place != 0)							/* Mete uma virgula se houver mais do que um */
 		strcat(t->params_str, ",");
-	strcat(t->params_str, type);			
-}
-
-void add_var(Tabela *t, char *var, char *type) {
-	int i = t->n_variaveis;		
-	t->variaveis = realloc(t->variaveis, sizeof(char*) * (i + 2));
-	t->variaveis[i] = (char*) malloc(sizeof(char));							
-	t->variaveis[i + 1] = (char*) malloc(sizeof(char));
-	t->n_variaveis += 2;					
-	strcpy(t->variaveis[i], var);			
-	strcpy(t->variaveis[i + 1], type);		
+	strcat(t->params_str, type);			/* Acrescenta o type à string total */
 }
 
 
-void print_simbolos_globais() {
-	Tabela *aux = root;
-	for(int i = 0; i < aux->n_variaveis; i++) {
-		if(i%2 == 0)
-			printf("%s\t\t", aux->variaveis[i]);
+void add_var_to_table(table *t, char *var, char *type) {
+	int place = t->n_vars;					/* Número total de variáveis, ou seja, se forem 2 (var,tipo), o place a colocar a nova variavel vai ser 2 */
+
+	increaseVars(t);						/* Acrescentam-se duas posições */
+	strcpy(t->vars[place], var);			/* Mete-se o VAR na posição place */
+	strcpy(t->vars[place + 1], type);		/* Mete-se o TYPE na posição place+1 */
+}
+
+void increaseParams(table *t) {
+	int size = t->n_params;											/* Número de parâmetros que já se tem */
+
+	t->params = realloc(t->params, sizeof(char*) * (size + 2));
+	t->params[size] = (char*) malloc(sizeof(char));							
+	t->params[size + 1] = (char*) malloc(sizeof(char));
+	t->n_params += 2;
+}
+
+void increaseVars(table *t) {
+	int size = t->n_vars;
+
+	t->vars = realloc(t->vars, sizeof(char*) * (size + 2));
+	t->vars[size] = (char*) malloc(sizeof(char));							
+	t->vars[size + 1] = (char*) malloc(sizeof(char));
+	t->n_vars += 2;
+}
+
+void print_global_symbols() {
+	table *aux = root_table;
+
+
+	/* Variáveis globais */
+	int size = aux->n_vars;
+	int i;
+	for(i = 0; i < size; i++) {
+		if(i % 2 == 0)
+			printf("%s\t\t", aux->vars[i]);
 		else
-			printf("%s\n", aux->variaveis[i]);
+			printf("%s\n", aux->vars[i]);
+
 	}
 
-	aux = root->next;
+
+	/* Funções (tabelas seguintes) */
+	aux = root_table->next;
 	while(aux != NULL) {
-		printf("%s\t(%s)\t%s\n", aux->nome, aux->params_str, aux->tipo_return);
+		printf("%s\t(%s)\t%s\n", aux->nome, aux->params_str, aux->type);
+
 		aux = aux->next;
 	}
 }
 
-void print_simbolos_metodos(Tabela *t) {
-	printf("return\t\t%s\n", t->tipo_return);
+void print_method_symbols(table *table) {
+	/* Retorno da função */
+	printf("return\t\t%s\n", table->type);
 
-	for(int i = 0; i < t->n_parametros; i++) {
+
+	/* Parâmetros de entrada */
+	int size = table->n_params;
+	int i;
+	for(i = 0; i < size; i++) {
 		if(i % 2 == 0)
-			printf("%s\t\t", t->parametros[i]);
+			printf("%s\t\t", table->params[i]);
 		else
-			printf("%s\tparam\n", t->parametros[i]);
+			printf("%s\tparam\n", table->params[i]);
 
 	}
 
-	for(int i = 0; i < t->n_variaveis; i++) {
+
+	/* Variáveis */
+	size = table->n_vars;
+	for(i = 0; i < size; i++) {
 		if(i % 2 == 0)
-			printf("%s\t\t", t->variaveis[i]);
+			printf("%s\t\t", table->vars[i]);
 		else
-			printf("%s\n", t->variaveis[i]);
+			printf("%s\n", table->vars[i]);
+
 	}
 }
 
-void print_symbol_table() {
+void print_tables() {
 
-	Tabela *aux = root;
+	table *aux_table = root_table;
 
-	while(aux) {
-		if(aux->method == 0) {
-			printf("===== Class %s Symbol Table =====\n", aux->nome);
-			print_simbolos_globais();
+	while(aux_table) {
+		if(aux_table->func == 0) {
+			printf("===== Class %s Symbol Table =====\n", aux_table->nome);
+			print_global_symbols();
 		}
 		else {
-			printf("===== Method %s(%s) Symbol Table =====\n", aux->nome, aux->params_str);
-			print_simbolos_metodos(aux);
+			printf("===== Method %s(%s) Symbol Table =====\n", aux_table->nome, aux_table->params_str);
+			print_method_symbols(aux_table);
 		}
+
+
 		printf("\n");
-		aux = aux->next;
+		aux_table = aux_table->next;
 	}
 }
