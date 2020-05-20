@@ -5,7 +5,8 @@
 		Correr com:
 		lex jucompiler.l
 		yacc -d jucompiler.y
-		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c
+		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c semantic.c symbol_table.c
+		./jucompiler -s < Factorial.java 
 */
 %}
 %{

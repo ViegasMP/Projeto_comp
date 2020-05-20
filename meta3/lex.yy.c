@@ -3027,7 +3027,7 @@ int main(int argc, char **argv)
 			init_global_table(tree->filho);
 
 			last_table = root_table;
-			local_dfs(tree, last_table);
+			local_dfs(tree->filho, last_table);
 
 			print_tables(root_table);
 			print_tree(tree,0);

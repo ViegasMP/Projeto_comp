@@ -178,9 +178,10 @@
 		Correr com:
 		lex jucompiler.l
 		yacc -d jucompiler.y
-		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c
+		cc -o jucompiler y.tab.c lex.yy.c tree_functions.c semantic.c symbol_table.c
+		./jucompiler -s < Factorial.java 
 */
-#line 11 "jucompiler.y"
+#line 12 "jucompiler.y"
 
 #include <stdio.h>
 #include <stdbool.h> 
@@ -232,13 +233,13 @@ struct no* no_block;
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 42 "jucompiler.y"
+#line 43 "jucompiler.y"
 {
 	char * str;
 	struct no* no;
 }
 /* Line 193 of yacc.c.  */
-#line 242 "y.tab.c"
+#line 243 "y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -251,7 +252,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 255 "y.tab.c"
+#line 256 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -577,15 +578,15 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   115,   115,   120,   127,   135,   143,   144,   145,   146,
-     148,   155,   162,   164,   169,   171,   172,   173,   175,   186,
-     197,   208,   219,   227,   234,   242,   249,   256,   261,   263,
-     271,   279,   282,   286,   294,   297,   311,   326,   349,   360,
-     365,   366,   367,   368,   369,   370,   375,   380,   382,   387,
-     391,   399,   406,   412,   414,   419,   421,   429,   436,   438,
-     439,   441,   447,   453,   459,   465,   471,   477,   483,   489,
-     495,   501,   507,   513,   519,   525,   531,   537,   542,   547,
-     552,   553,   554,   555,   560,   561,   562,   563,   564
+       0,   116,   116,   121,   128,   136,   144,   145,   146,   147,
+     149,   156,   163,   165,   170,   172,   173,   174,   176,   187,
+     198,   209,   220,   228,   235,   243,   250,   257,   262,   264,
+     272,   280,   283,   287,   295,   298,   312,   327,   350,   361,
+     366,   367,   368,   369,   370,   371,   376,   381,   383,   388,
+     392,   400,   407,   413,   415,   420,   422,   430,   437,   439,
+     440,   442,   448,   454,   460,   466,   472,   478,   484,   490,
+     496,   502,   508,   514,   520,   526,   532,   538,   543,   548,
+     553,   554,   555,   556,   561,   562,   563,   564,   565
 };
 #endif
 
@@ -1658,7 +1659,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 115 "jucompiler.y"
+#line 116 "jucompiler.y"
     {	
 																					tree = cria_no("Program", NULL);
 																					no_id = cria_no("Id",(yyvsp[(2) - (4)].str));
@@ -1667,7 +1668,7 @@ yyreduce:
     break;
 
   case 3:
-#line 120 "jucompiler.y"
+#line 121 "jucompiler.y"
     {	
 																					tree = cria_no("Program", NULL);
 																					no_id = cria_no("Id",(yyvsp[(2) - (5)].str));
@@ -1677,7 +1678,7 @@ yyreduce:
     break;
 
   case 4:
-#line 127 "jucompiler.y"
+#line 128 "jucompiler.y"
     {
 																					aux = (yyvsp[(1) - (2)].no);
 																					if(aux!=NULL){
@@ -1689,7 +1690,7 @@ yyreduce:
     break;
 
   case 5:
-#line 135 "jucompiler.y"
+#line 136 "jucompiler.y"
     {
 																					aux = (yyvsp[(1) - (2)].no);
 																					if(aux!=NULL){
@@ -1701,27 +1702,27 @@ yyreduce:
     break;
 
   case 6:
-#line 143 "jucompiler.y"
+#line 144 "jucompiler.y"
     {(yyval.no) = (yyvsp[(1) - (2)].no);}
     break;
 
   case 7:
-#line 144 "jucompiler.y"
-    {(yyval.no) = (yyvsp[(1) - (1)].no);}
-    break;
-
-  case 8:
 #line 145 "jucompiler.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
-  case 9:
+  case 8:
 #line 146 "jucompiler.y"
+    {(yyval.no) = (yyvsp[(1) - (1)].no);}
+    break;
+
+  case 9:
+#line 147 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
   case 10:
-#line 148 "jucompiler.y"
+#line 149 "jucompiler.y"
     {	
 																					aux = cria_no("MethodDecl", NULL);
 																					add_filho(aux, (yyvsp[(3) - (4)].no));
@@ -1731,7 +1732,7 @@ yyreduce:
     break;
 
   case 11:
-#line 155 "jucompiler.y"
+#line 156 "jucompiler.y"
     {	
 																					aux = cria_no("FieldDecl", NULL);
 																					add_filho(aux, (yyvsp[(3) - (5)].no));
@@ -1742,12 +1743,12 @@ yyreduce:
     break;
 
   case 12:
-#line 162 "jucompiler.y"
+#line 163 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
   case 13:
-#line 164 "jucompiler.y"
+#line 165 "jucompiler.y"
     {
 																					aux = (yyvsp[(1) - (3)].no);
 																					add_irmao(aux, cria_no("Id",(yyvsp[(3) - (3)].str)));
@@ -1756,27 +1757,27 @@ yyreduce:
     break;
 
   case 14:
-#line 169 "jucompiler.y"
+#line 170 "jucompiler.y"
     {(yyval.no) = cria_no("Id",(yyvsp[(1) - (1)].str));}
     break;
 
   case 15:
-#line 171 "jucompiler.y"
+#line 172 "jucompiler.y"
     {(yyval.no) = cria_no("Bool", NULL);}
     break;
 
   case 16:
-#line 172 "jucompiler.y"
+#line 173 "jucompiler.y"
     {(yyval.no) = cria_no("Int", NULL);}
     break;
 
   case 17:
-#line 173 "jucompiler.y"
+#line 174 "jucompiler.y"
     {(yyval.no) = cria_no("Double", NULL);}
     break;
 
   case 18:
-#line 175 "jucompiler.y"
+#line 176 "jucompiler.y"
     {
 																					header = cria_no("MethodHeader", NULL);
 																					par = cria_no("MethodParams", NULL);
@@ -1791,7 +1792,7 @@ yyreduce:
     break;
 
   case 19:
-#line 186 "jucompiler.y"
+#line 187 "jucompiler.y"
     {
 																					header = cria_no("MethodHeader", NULL);
 																					par = cria_no("MethodParams", NULL);
@@ -1805,7 +1806,7 @@ yyreduce:
     break;
 
   case 20:
-#line 197 "jucompiler.y"
+#line 198 "jucompiler.y"
     {
 																					header = cria_no("MethodHeader", NULL);
 																					no_void = cria_no("Void", NULL);
@@ -1820,7 +1821,7 @@ yyreduce:
     break;
 
   case 21:
-#line 208 "jucompiler.y"
+#line 209 "jucompiler.y"
     {
 																					header = cria_no("MethodHeader", NULL);
 																					par = cria_no("MethodParams", NULL);
@@ -1834,7 +1835,7 @@ yyreduce:
     break;
 
   case 22:
-#line 219 "jucompiler.y"
+#line 220 "jucompiler.y"
     {
 																					par = cria_no("ParamDecl", NULL);
 																					add_filho(par, (yyvsp[(1) - (3)].no));
@@ -1846,7 +1847,7 @@ yyreduce:
     break;
 
   case 23:
-#line 227 "jucompiler.y"
+#line 228 "jucompiler.y"
     {
 																					par = cria_no("ParamDecl", NULL);
 																					add_filho(par, (yyvsp[(1) - (2)].no));
@@ -1857,7 +1858,7 @@ yyreduce:
     break;
 
   case 24:
-#line 234 "jucompiler.y"
+#line 235 "jucompiler.y"
     {
 																					par = cria_no("ParamDecl", NULL);
 																					aux = cria_no("StringArray", NULL);
@@ -1868,7 +1869,7 @@ yyreduce:
     break;
 
   case 25:
-#line 242 "jucompiler.y"
+#line 243 "jucompiler.y"
     {	
 																					par = cria_no("ParamDecl", NULL);
 																					add_filho(par, (yyvsp[(2) - (4)].no));
@@ -1879,7 +1880,7 @@ yyreduce:
     break;
 
   case 26:
-#line 249 "jucompiler.y"
+#line 250 "jucompiler.y"
     {	
 																					par = cria_no("ParamDecl", NULL);
 																					add_filho(par, (yyvsp[(2) - (3)].no));
@@ -1889,7 +1890,7 @@ yyreduce:
     break;
 
   case 27:
-#line 256 "jucompiler.y"
+#line 257 "jucompiler.y"
     {	
 																					body = cria_no("MethodBody", NULL);
 																					add_filho(body, (yyvsp[(2) - (3)].no));
@@ -1898,12 +1899,12 @@ yyreduce:
     break;
 
   case 28:
-#line 261 "jucompiler.y"
+#line 262 "jucompiler.y"
     {(yyval.no) = cria_no("MethodBody", NULL);}
     break;
 
   case 29:
-#line 263 "jucompiler.y"
+#line 264 "jucompiler.y"
     {
 																					aux = (yyvsp[(1) - (2)].no);
 																					if(aux!=NULL){
@@ -1915,7 +1916,7 @@ yyreduce:
     break;
 
   case 30:
-#line 271 "jucompiler.y"
+#line 272 "jucompiler.y"
     {
 																					aux = (yyvsp[(1) - (2)].no);
 																					if(aux!=NULL){
@@ -1927,21 +1928,21 @@ yyreduce:
     break;
 
   case 31:
-#line 279 "jucompiler.y"
+#line 280 "jucompiler.y"
     {
 																					(yyval.no) = (yyvsp[(1) - (1)].no);
 																				}
     break;
 
   case 32:
-#line 282 "jucompiler.y"
+#line 283 "jucompiler.y"
     {
 																					(yyval.no) = (yyvsp[(1) - (1)].no);
 																				}
     break;
 
   case 33:
-#line 286 "jucompiler.y"
+#line 287 "jucompiler.y"
     {
 																					dcl = cria_no("VarDecl", NULL);
 																					add_filho(dcl, (yyvsp[(1) - (3)].no));
@@ -1952,14 +1953,14 @@ yyreduce:
     break;
 
   case 34:
-#line 294 "jucompiler.y"
+#line 295 "jucompiler.y"
     {
 																					(yyval.no) = NULL;
 																				}
     break;
 
   case 35:
-#line 297 "jucompiler.y"
+#line 298 "jucompiler.y"
     {
 																					aux = (yyvsp[(2) - (3)].no);
 																					if(aux!=NULL){
@@ -1977,7 +1978,7 @@ yyreduce:
     break;
 
   case 36:
-#line 311 "jucompiler.y"
+#line 312 "jucompiler.y"
     {
 																					no_if = cria_no("If", NULL);
 																					aux = (yyvsp[(3) - (5)].no);
@@ -1996,7 +1997,7 @@ yyreduce:
     break;
 
   case 37:
-#line 326 "jucompiler.y"
+#line 327 "jucompiler.y"
     {
 																					no_if = cria_no("If", NULL);
 																					aux = (yyvsp[(3) - (7)].no);
@@ -2023,7 +2024,7 @@ yyreduce:
     break;
 
   case 38:
-#line 349 "jucompiler.y"
+#line 350 "jucompiler.y"
     {
 																					aux = cria_no("While", NULL);
                                                             						add_filho(aux, (yyvsp[(3) - (5)].no));
@@ -2038,7 +2039,7 @@ yyreduce:
     break;
 
   case 39:
-#line 360 "jucompiler.y"
+#line 361 "jucompiler.y"
     {
 																					aux = cria_no("Return", NULL);
                                                             						add_filho(aux, (yyvsp[(2) - (3)].no));
@@ -2047,32 +2048,32 @@ yyreduce:
     break;
 
   case 40:
-#line 365 "jucompiler.y"
+#line 366 "jucompiler.y"
     {(yyval.no) = cria_no("Return", NULL);}
     break;
 
   case 41:
-#line 366 "jucompiler.y"
+#line 367 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
   case 42:
-#line 367 "jucompiler.y"
-    {(yyval.no) = (yyvsp[(1) - (2)].no);}
-    break;
-
-  case 43:
 #line 368 "jucompiler.y"
     {(yyval.no) = (yyvsp[(1) - (2)].no);}
     break;
 
-  case 44:
+  case 43:
 #line 369 "jucompiler.y"
     {(yyval.no) = (yyvsp[(1) - (2)].no);}
     break;
 
-  case 45:
+  case 44:
 #line 370 "jucompiler.y"
+    {(yyval.no) = (yyvsp[(1) - (2)].no);}
+    break;
+
+  case 45:
+#line 371 "jucompiler.y"
     {
 																					aux = cria_no("Print", NULL);
                                                             						add_filho(aux, (yyvsp[(3) - (5)].no));
@@ -2081,7 +2082,7 @@ yyreduce:
     break;
 
   case 46:
-#line 375 "jucompiler.y"
+#line 376 "jucompiler.y"
     {
 																					aux = cria_no("Print", NULL);
                                                             						add_filho(aux, cria_no("StrLit", (yyvsp[(3) - (5)].str)));
@@ -2090,12 +2091,12 @@ yyreduce:
     break;
 
   case 47:
-#line 380 "jucompiler.y"
+#line 381 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
   case 48:
-#line 382 "jucompiler.y"
+#line 383 "jucompiler.y"
     {
 																					aux = (yyvsp[(1) - (2)].no);
 																					add_irmao(aux,(yyvsp[(2) - (2)].no));
@@ -2104,14 +2105,14 @@ yyreduce:
     break;
 
   case 49:
-#line 387 "jucompiler.y"
+#line 388 "jucompiler.y"
     {
 																					(yyval.no) = (yyvsp[(1) - (1)].no);
 																				}
     break;
 
   case 50:
-#line 391 "jucompiler.y"
+#line 392 "jucompiler.y"
     {
 																					no_call = cria_no("Call", NULL);
 																					aux = cria_no("Id", (yyvsp[(1) - (5)].str));
@@ -2123,7 +2124,7 @@ yyreduce:
     break;
 
   case 51:
-#line 399 "jucompiler.y"
+#line 400 "jucompiler.y"
     {
 																					no_call = cria_no("Call", NULL);
 																					aux = cria_no("Id", (yyvsp[(1) - (4)].str));
@@ -2134,7 +2135,7 @@ yyreduce:
     break;
 
   case 52:
-#line 406 "jucompiler.y"
+#line 407 "jucompiler.y"
     {
                                                                         			no_call = cria_no("Call", NULL);
 																					aux = cria_no("Id", (yyvsp[(1) - (3)].str));
@@ -2144,12 +2145,12 @@ yyreduce:
     break;
 
   case 53:
-#line 412 "jucompiler.y"
+#line 413 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
   case 54:
-#line 414 "jucompiler.y"
+#line 415 "jucompiler.y"
     {
 																				aux = (yyvsp[(2) - (3)].no);
 																				add_irmao(aux, (yyvsp[(3) - (3)].no));
@@ -2158,12 +2159,12 @@ yyreduce:
     break;
 
   case 55:
-#line 419 "jucompiler.y"
+#line 420 "jucompiler.y"
     {(yyval.no) = (yyvsp[(2) - (2)].no);}
     break;
 
   case 56:
-#line 421 "jucompiler.y"
+#line 422 "jucompiler.y"
     {
 																					assign = cria_no("Assign", NULL);
 																					aux = cria_no("Id", (yyvsp[(1) - (3)].str));
@@ -2174,7 +2175,7 @@ yyreduce:
     break;
 
   case 57:
-#line 429 "jucompiler.y"
+#line 430 "jucompiler.y"
     {
 																					no_parse = cria_no("ParseArgs", NULL);
 																					aux = cria_no("Id", (yyvsp[(3) - (7)].str));
@@ -2185,22 +2186,22 @@ yyreduce:
     break;
 
   case 58:
-#line 436 "jucompiler.y"
+#line 437 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
   case 59:
-#line 438 "jucompiler.y"
-    {(yyval.no) = (yyvsp[(1) - (1)].no);}
-    break;
-
-  case 60:
 #line 439 "jucompiler.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
+  case 60:
+#line 440 "jucompiler.y"
+    {(yyval.no) = (yyvsp[(1) - (1)].no);}
+    break;
+
   case 61:
-#line 441 "jucompiler.y"
+#line 442 "jucompiler.y"
     {
 																					aux = cria_no("Add", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2210,7 +2211,7 @@ yyreduce:
     break;
 
   case 62:
-#line 447 "jucompiler.y"
+#line 448 "jucompiler.y"
     {
 																					aux = cria_no("Sub", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2220,7 +2221,7 @@ yyreduce:
     break;
 
   case 63:
-#line 453 "jucompiler.y"
+#line 454 "jucompiler.y"
     {
 																					aux = cria_no("Mul", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2230,7 +2231,7 @@ yyreduce:
     break;
 
   case 64:
-#line 459 "jucompiler.y"
+#line 460 "jucompiler.y"
     {
 																					aux = cria_no("Div", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2240,7 +2241,7 @@ yyreduce:
     break;
 
   case 65:
-#line 465 "jucompiler.y"
+#line 466 "jucompiler.y"
     {
 																					aux = cria_no("Mod", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2250,7 +2251,7 @@ yyreduce:
     break;
 
   case 66:
-#line 471 "jucompiler.y"
+#line 472 "jucompiler.y"
     {
 																					aux = cria_no("And", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2260,7 +2261,7 @@ yyreduce:
     break;
 
   case 67:
-#line 477 "jucompiler.y"
+#line 478 "jucompiler.y"
     {
 																					aux = cria_no("Or", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2270,7 +2271,7 @@ yyreduce:
     break;
 
   case 68:
-#line 483 "jucompiler.y"
+#line 484 "jucompiler.y"
     {
 																					aux = cria_no("Xor", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2280,7 +2281,7 @@ yyreduce:
     break;
 
   case 69:
-#line 489 "jucompiler.y"
+#line 490 "jucompiler.y"
     {
 																					aux = cria_no("Lshift", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2290,7 +2291,7 @@ yyreduce:
     break;
 
   case 70:
-#line 495 "jucompiler.y"
+#line 496 "jucompiler.y"
     {
 																					aux = cria_no("Rshift", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2300,7 +2301,7 @@ yyreduce:
     break;
 
   case 71:
-#line 501 "jucompiler.y"
+#line 502 "jucompiler.y"
     {
 																					aux = cria_no("Eq", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2310,7 +2311,7 @@ yyreduce:
     break;
 
   case 72:
-#line 507 "jucompiler.y"
+#line 508 "jucompiler.y"
     {
 																					aux = cria_no("Ge", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2320,7 +2321,7 @@ yyreduce:
     break;
 
   case 73:
-#line 513 "jucompiler.y"
+#line 514 "jucompiler.y"
     {
 																					aux = cria_no("Gt", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2330,7 +2331,7 @@ yyreduce:
     break;
 
   case 74:
-#line 519 "jucompiler.y"
+#line 520 "jucompiler.y"
     {
 																					aux = cria_no("Le", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2340,7 +2341,7 @@ yyreduce:
     break;
 
   case 75:
-#line 525 "jucompiler.y"
+#line 526 "jucompiler.y"
     {
 																					aux = cria_no("Lt", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2350,7 +2351,7 @@ yyreduce:
     break;
 
   case 76:
-#line 531 "jucompiler.y"
+#line 532 "jucompiler.y"
     {
 																					aux = cria_no("Ne", NULL);
 																					add_filho(aux, (yyvsp[(1) - (3)].no));
@@ -2360,7 +2361,7 @@ yyreduce:
     break;
 
   case 77:
-#line 537 "jucompiler.y"
+#line 538 "jucompiler.y"
     {
 																					aux = cria_no("Minus", NULL);
                             														add_filho(aux, (yyvsp[(2) - (2)].no));
@@ -2369,7 +2370,7 @@ yyreduce:
     break;
 
   case 78:
-#line 542 "jucompiler.y"
+#line 543 "jucompiler.y"
     {
 																					aux = cria_no("Not", NULL);
                             														add_filho(aux, (yyvsp[(2) - (2)].no));
@@ -2378,7 +2379,7 @@ yyreduce:
     break;
 
   case 79:
-#line 547 "jucompiler.y"
+#line 548 "jucompiler.y"
     {
 																					aux = cria_no("Plus", NULL);
                             														add_filho(aux, (yyvsp[(2) - (2)].no));
@@ -2387,22 +2388,22 @@ yyreduce:
     break;
 
   case 80:
-#line 552 "jucompiler.y"
+#line 553 "jucompiler.y"
     {(yyval.no)=(yyvsp[(2) - (3)].no);}
     break;
 
   case 81:
-#line 553 "jucompiler.y"
-    {(yyval.no) = (yyvsp[(1) - (1)].no);}
-    break;
-
-  case 82:
 #line 554 "jucompiler.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
-  case 83:
+  case 82:
 #line 555 "jucompiler.y"
+    {(yyval.no) = (yyvsp[(1) - (1)].no);}
+    break;
+
+  case 83:
+#line 556 "jucompiler.y"
     {
 																					aux = cria_no("Length", NULL);
 																					add_filho(aux,cria_no("Id",(yyvsp[(1) - (2)].str)));
@@ -2411,33 +2412,33 @@ yyreduce:
     break;
 
   case 84:
-#line 560 "jucompiler.y"
+#line 561 "jucompiler.y"
     {(yyval.no) = cria_no("Id",(yyvsp[(1) - (1)].str));}
     break;
 
   case 85:
-#line 561 "jucompiler.y"
+#line 562 "jucompiler.y"
     {(yyval.no) = cria_no("DecLit",(yyvsp[(1) - (1)].str));}
     break;
 
   case 86:
-#line 562 "jucompiler.y"
+#line 563 "jucompiler.y"
     {(yyval.no) = cria_no("RealLit",(yyvsp[(1) - (1)].str));}
     break;
 
   case 87:
-#line 563 "jucompiler.y"
+#line 564 "jucompiler.y"
     {(yyval.no) = cria_no("BoolLit",(yyvsp[(1) - (1)].str));}
     break;
 
   case 88:
-#line 564 "jucompiler.y"
+#line 565 "jucompiler.y"
     {(yyval.no) = NULL;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 2441 "y.tab.c"
+#line 2442 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2651,7 +2652,7 @@ yyreturn:
 }
 
 
-#line 568 "jucompiler.y"
+#line 569 "jucompiler.y"
 
 
 void yyerror ( char *s) {

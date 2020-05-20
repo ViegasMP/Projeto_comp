@@ -74,7 +74,6 @@ void increaseVars(table *t) {
 void print_global_symbols() {
 	table *aux = root_table;
 
-
 	/* Variáveis globais */
 	int size = aux->n_vars;
 	int i;
@@ -85,7 +84,6 @@ void print_global_symbols() {
 			printf("%s\n", aux->vars[i]);
 
 	}
-
 
 	/* Funções (tabelas seguintes) */
 	aux = root_table->next;
@@ -100,7 +98,6 @@ void print_method_symbols(table *table) {
 	/* Retorno da função */
 	printf("return\t\t%s\n", table->type);
 
-
 	/* Parâmetros de entrada */
 	int size = table->n_params;
 	int i;
@@ -111,7 +108,6 @@ void print_method_symbols(table *table) {
 			printf("%s\tparam\n", table->params[i]);
 
 	}
-
 
 	/* Variáveis */
 	size = table->n_vars;
