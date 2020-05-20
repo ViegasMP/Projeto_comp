@@ -8,14 +8,13 @@ void global_dfs(No* current) {
 		insert_global_var_decl(current);
 	if(strcmp(current->nome, "MethodDecl") == 0)
 		insert_global_method_decl(current);
-	print_tables(root_table);
 	global_dfs(current->irmao);
 }
 
 void local_dfs(No*current, table *last_table) {
+
 	if(current == NULL)
 		return;
-
 	if(strcmp(current->nome, "MethodDecl") == 0) {
 		last_table = last_table->next;
 		
@@ -24,7 +23,6 @@ void local_dfs(No*current, table *last_table) {
 		}			
 																			
 	}
-
 	local_dfs(current->irmao, last_table);
 
 }
@@ -35,7 +33,6 @@ void function_dfs(No*current, table *c_table) {							// Estamos no primeiro fil
 
 	if(strcmp(current->nome, "VarDecl") == 0)
 		insert_function_var_decl(current->filho, c_table);
-
 
 	function_dfs(current->irmao, c_table);
 }
