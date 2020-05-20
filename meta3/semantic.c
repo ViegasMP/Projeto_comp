@@ -12,7 +12,6 @@ void global_dfs(No* current) {
 }
 
 void local_dfs(No*current, table *last_table) {
-
 	if(current == NULL)
 		return;
 	if(strcmp(current->nome, "MethodDecl") == 0) {
@@ -21,7 +20,7 @@ void local_dfs(No*current, table *last_table) {
 		if(current->filho->irmao->filho != NULL) {						// Entrar directo para o primeiro filho de MethodBody se esta tiver um filho
 			function_dfs(current->filho->irmao->filho, last_table);
 		}			
-																			
+		fflush(stdin);															
 	}
 	local_dfs(current->irmao, last_table);
 
