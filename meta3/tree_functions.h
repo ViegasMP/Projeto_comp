@@ -14,6 +14,7 @@ void add_filho(No* n, No* filho);
 int check_irmao(No* n);
 void tratamentoIDRep(No* pai, No* filho);
 void print_tree(No* n, int nivel);
+//void print_notation_tree (No* n, int nivel, int anotation);
 void free_tree(No* n);
 
 #endif

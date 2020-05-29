@@ -4,7 +4,7 @@
 void init_global_table(No* no) {
 	table *new_table = (table*) malloc(sizeof(table));
 
-	new_table->func = 0;
+	new_table->isMethod = 0;
 	new_table->nome = strdup(no->valor);
 
 	new_table->n_params = 0;
@@ -22,7 +22,7 @@ void init_global_table(No* no) {
 table *init_method_table() {
 	table *new_table = (table*) malloc(sizeof(table));
 
-	new_table->func = 1;
+	new_table->isMethod = 1;
 	new_table->n_params = 0;
 	new_table->n_vars = 0;
 	new_table->next = NULL;
@@ -125,7 +125,7 @@ void print_tables() {
 	table *aux_table = root_table;
 
 	while(aux_table) {
-		if(aux_table->func == 0) {
+		if(aux_table->isMethod == 0) {
 			printf("===== Class %s Symbol Table =====\n", aux_table->nome);
 			print_global_symbols();
 		}

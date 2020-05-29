@@ -5,8 +5,6 @@ char *var_nome;
 char *param_nome;
 char *func_nome;
 char *return_type;
-int debug;
-int down;
 
 
 void dfs_tree(No*current, int i);
