@@ -33,28 +33,27 @@ table *init_method_table() {
 }
 
 void add_param_to_table(table *t, char *param, char *type) {
-	int place = t->n_params;				/* Número total de parâmetros, ou seja, se forem 2 (param,tipo), o place a colocar o novo parâmetro vai ser 2 */
+	int place = t->n_params;				
 	
-	increaseParams(t);						/* Acrescentam-se duas posições */
-	strcpy(t->params[place], param);		/* Mete-se o PARAM na posição place */
-	strcpy(t->params[place + 1], type);		/* Mete-se o TYPE na posição place+1 */
+	increaseParams(t);						
+	strcpy(t->params[place], param);		
+	strcpy(t->params[place + 1], type);		
 
-	if(place != 0)							/* Mete uma virgula se houver mais do que um */
+	if(place != 0)							
 		strcat(t->params_str, ",");
-	strcat(t->params_str, type);			/* Acrescenta o type à string total */
+	strcat(t->params_str, type);			
 }
 
 
 void add_var_to_table(table *t, char *var, char *type) {
-	int place = t->n_vars;					/* Número total de variáveis, ou seja, se forem 2 (var,tipo), o place a colocar a nova variavel vai ser 2 */
-
-	increaseVars(t);						/* Acrescentam-se duas posições */
-	strcpy(t->vars[place], var);			/* Mete-se o VAR na posição place */
-	strcpy(t->vars[place + 1], type);		/* Mete-se o TYPE na posição place+1 */
+	int place = t->n_vars;				
+	increaseVars(t);						
+	strcpy(t->vars[place], var);			
+	strcpy(t->vars[place + 1], type);		
 }
 
 void increaseParams(table *t) {
-	int size = t->n_params;											/* Número de parâmetros que já se tem */
+	int size = t->n_params;	//numero de parametros inicial
 
 	t->params = realloc(t->params, sizeof(char*) * (size + 2));
 	t->params[size] = (char*) malloc(sizeof(char));							
@@ -74,7 +73,7 @@ void increaseVars(table *t) {
 void print_global_symbols() {
 	table *aux = root_table;
 
-	/* Variáveis globais */
+	// Variáveis globais 
 	int size = aux->n_vars;
 	int i;
 	for(i = 0; i < size; i++) {
@@ -85,7 +84,7 @@ void print_global_symbols() {
 
 	}
 
-	/* Funções (tabelas seguintes) */
+	// Métodos (tabelas seguintes)
 	aux = root_table->next;
 	while(aux != NULL) {
 		printf("%s\t(%s)\t%s\n", aux->nome, aux->params_str, aux->type);
@@ -95,10 +94,10 @@ void print_global_symbols() {
 }
 
 void print_method_symbols(table *table) {
-	/* Retorno da função */
+	// Retorno do metodo 
 	printf("return\t\t%s\n", table->type);
 
-	/* Parâmetros de entrada */
+	//Parâmetros de entrada
 	int size = table->n_params;
 	int i;
 	for(i = 0; i < size; i++) {
@@ -109,7 +108,7 @@ void print_method_symbols(table *table) {
 
 	}
 
-	/* Variáveis */
+	// Variáveis 
 	size = table->n_vars;
 	for(i = 0; i < size; i++) {
 		if(i % 2 == 0)

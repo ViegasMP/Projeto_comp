@@ -66,120 +66,41 @@ void print_tree(No* n, int nivel) {
 	print_tree(n->filho, nivel+1);
 	//imprime irmaos
 	print_tree(n->irmao, nivel);
- }
+}  
 /*
- void print_params_annotationFun(params_type* params) {
-    if(params==NULL) {
-        printf(" - (undef)");
-        return;
-    }    
-    params_type* tmp = params;
-
-    printf(" - (");
-    while(tmp->next!=NULL) {
-        printf("%s,",basic_type_to_string(tmp->param_type));
-        tmp=tmp->next;
-    }
-    switch (tmp->param_type){
-        case blank:
-            printf(")");
-            break;
-        default:
-            printf("%s)",basic_type_to_string(tmp->param_type));
-    }
-
-
-}   
-
-void print_params_annotation(params_type* params) {
-    if(params == NULL) {
-        printf(" - undef");
-        return;
-    }    
-    params_type* tmp = params;
-
-    while(tmp->next!=NULL) {
-        printf(" - ");
-        printf("%s,",basic_type_to_string(tmp->param_type));
-        tmp=tmp->next;
-    }
-    switch (tmp->param_type){
-        case blank:
-            break;
-        default:
-            if(tmp == params)
-                printf(" - ");
-            printf("%s",basic_type_to_string(tmp->param_type));
-    }
-
-}
-
-void print_annotation(No* n) {
-    No*aux = n; 
-    if ((strcmp(aux->nome, "IntLit") == 0) ||
-    (strcmp(aux->nome, "RealLit") == 0) ||
-    (strcmp(aux->nome, "StrLit") == 0) ||
-    (strcmp(aux->nome, "String") == 0) ||
-    (strcmp(aux->nome, "Bool") == 0) ||
-    (strcmp(aux->nome, "Eq") == 0) ||
-    (strcmp(aux->nome,"Add") == 0) ||
-    (strcmp(aux->nome,"Sub") == 0) ||
-    (strcmp(aux->nome,"Mul") == 0) ||
-    (strcmp(aux->nome,"Div") == 0) ||
-    (strcmp(aux->nome,"Mod") == 0) ||
-    (strcmp(aux->nome,"Plus") == 0) ||
-    (strcmp(aux->nome,"Minus") == 0) ||
-    (strcmp(aux->nome,"Not") == 0) ||
-    (strcmp(aux->nome,"And") == 0) ||
-    (strcmp(aux->nome,"Or") == 0) ||
-    (strcmp(aux->nome,"Ge") == 0) ||
-    (strcmp(aux->nome,"Le") == 0) ||
-    (strcmp(aux->nome,"Lt") == 0) ||
-    (strcmp(aux->nome,"Gt") == 0) ||
-    (strcmp(aux->nome,"Ne") == 0) ||
-    (strcmp(aux->nome,"ParseArgs") == 0) ||
-    (strcmp(aux->nome,"Call") == 0) ||
-    (strcmp(aux->nome,"Assign") == 0)){
-        print_params_annotation(aux->nome);  
-
-    } else if (strcmp(aux->nome, "Id") == 0 ){
-        if(aux->is_fun){
-            print_params_annotationFun(aux->nome);
-        } else {
-            print_params_annotation(aux->nome);
-
-        }
-    } 
-}
-
 void print_notation_tree (No* n, int nivel, int anotation) {
     int i;
-	int body=0;
 	if(n==NULL) return;
-    for(i=0; i<nivel;i++) printf("..");
-	if(n->valor == NULL) printf("%s\n", n->nome);
-	else printf("%s(%s)\n", n->nome, n->valor);    
+	for(i=0; i<nivel;i++) printf("..");
+	if(n->valor == NULL) printf("%s", n->nome);
+	else printf("%s(%s)", n->nome, n->valor);   
 
-	if(strcmp(n->nome, "MethodBody")==0) {
-		body=1;
-	} else if(strcmp(n->nome, "MethodHeader")==0) {
-		body=0;
-	}  
-	
-	if(strcmp(n->nome, "VarDecl")==0) {
-		print_notation_tree(n->filho, nivel+1, 0);
-		print_notation_tree(n->irmao, nivel, 1);
-		
+	if (anotation){
+		if (n->isMethod==1){
+			printf(" - (");
+			if (n->paramtypes != NULL){
+				paramtypes_t* pt = n->paramtypes;
+				printf("%s", pt->tipo);
+				pt = pt->next;
+				while (pt != NULL){
+					printf(",%s", pt->tipo);
+					pt = pt->next;
+				}
+			}
+			printf(")");
+		}
+		else if (n->tipo!=NULL){ 
+			printf(" - %s", n->tipo);
+		}
 	}
-	else {
-		if(anotation && body)
-			print_annotation(n);
-		print_notation_tree(n->filho, nivel+1, anotation);
-		print_notation_tree(n->irmao, nivel, anotation);
-	}
+	printf("\n");
+	//imprime filhos primeiro
+	print_notation_tree(n->filho, nivel+1, anotation);
+	//imprime irmaos
+	print_notation_tree(n->irmao, nivel, anotation);
 
-}*/
-
+}
+*/
 void free_tree(No* n){
 	if (n == NULL) return;
 	//apagar filhos

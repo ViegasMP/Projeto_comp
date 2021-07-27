@@ -14,12 +14,12 @@ typedef struct table {
 	char *nome; // nome do mettodo
 	char *type;	// tipo de retorno 
 
-	int n_params; // nmero de parâmetros 
+	int n_params; // numero de parâmetros 
 	char **params; //array de parâmetros [n_param][nome_param] -linha a seguir- [n_param] 
 	char params_str[MAX_S * 10]; //Parametros para string (x,y,z)
 
-	int n_vars;
-	char **vars;
+	int n_vars; //numero de variaveis
+	char **vars; //array de variaveis
 
 	struct table *next;
 } table;

@@ -70,6 +70,7 @@ void insert_global_method_decl(No* current) {
     current = current->irmao; //nome e argumentos da funcao
 	func_nome = strdup(current->valor); // guardar nome da funcao
     current = current->irmao;                          
+	
 	table *new_table = init_method_table();
 	new_table->nome = strdup(func_nome);
     new_table->type = strdup(return_type);
@@ -85,10 +86,8 @@ void insert_global_method_decl(No* current) {
 			param_nome = strdup(current->filho->irmao->valor);
 			
 			add_param_to_table(new_table, param_nome, tipo);
-
 			current = current->irmao;
 		}
 	}
-
 
 }
